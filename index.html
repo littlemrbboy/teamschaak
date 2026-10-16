@@ -1,0 +1,342 @@
+<!doctype html>
+<html lang="nl"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Teamschaak 3 tegen 3</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: één kolom op telefoon (status → bord → teams → zetten), twee kolommen op breed scherm */
+:root{
+  --bg:#E8ECEE; --surface:#F7F9F9; --ink:#17202A; --muted:#5A6672; --line:#CBD3D8;
+  --accent:#1F6B57; --accent-ink:#FFFFFF; --warn:#B4551D;
+  --sq-light:#E3E7D6; --sq-dark:#6E8E62; --sq-sel:#E8C547; --sq-last:#C9D98A;
+  --white-piece:#FBFBF7; --black-piece:#161616;
+  --f-display:"Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --f-body:"IBM Plex Sans", system-ui, -apple-system, sans-serif;
+  --f-mono:"IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#11161A; --surface:#1A2127; --ink:#E5EAEE; --muted:#93A0AB; --line:#2C363E;
+  --accent:#5FC0A1; --accent-ink:#0B1A15; --warn:#F09A5E; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#11161A; --surface:#1A2127; --ink:#E5EAEE; --muted:#93A0AB; --line:#2C363E;
+  --accent:#5FC0A1; --accent-ink:#0B1A15; --warn:#F09A5E; color-scheme:dark}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.45;
+  padding-left:max(16px, env(safe-area-inset-left,0px));padding-right:max(16px, env(safe-area-inset-right,0px));padding-block:20px 32px;margin:0}
+*{box-sizing:border-box}
+.namebox{display:flex;gap:8px;flex-wrap:wrap}
+.namebox input{flex:1;min-width:0;font:15px var(--f-body);padding:9px 12px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink)}
+.conn{font-size:12px;color:var(--muted)}
+.conn.ok::before{content:"● ";color:var(--accent)}
+.conn.bad::before{content:"● ";color:var(--warn)}
+.wrap{max-width:1040px;margin:0 auto;display:grid;gap:20px;grid-template-columns:minmax(0,1fr)}
+@media (min-width:860px){.wrap{grid-template-columns:minmax(0,560px) minmax(0,1fr);align-items:start}}
+header{grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:end;justify-content:space-between;gap:12px}
+h1{font-family:var(--f-display);font-weight:800;font-size:clamp(28px,6vw,40px);line-height:1;margin:0;letter-spacing:-.01em;text-wrap:balance}
+h1 span{color:var(--accent)}
+.sub{color:var(--muted);margin:6px 0 0}
+h2{font-family:var(--f-display);font-weight:600;font-size:18px;margin:0}
+.label{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;display:grid;gap:12px}
+.side{display:grid;gap:16px;min-width:0}
+
+.status{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:10px;background:var(--surface);border:1px solid var(--line)}
+.status.me{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent) inset}
+.dot{width:18px;height:18px;border-radius:50%;flex:none;border:2px solid var(--ink)}
+.dot.w{background:var(--white-piece)} .dot.b{background:var(--black-piece)}
+.status b{font-weight:600}
+.status small{display:block;color:var(--muted)}
+
+.boardbox{display:grid;gap:10px}
+.board{container-type:inline-size;width:100%;max-width:560px;aspect-ratio:1;display:grid;grid-template-columns:repeat(8,1fr);
+  border-radius:6px;overflow:hidden;border:3px solid var(--sq-dark);user-select:none;-webkit-user-select:none;touch-action:manipulation}
+.sq{position:relative;border:0;padding:0;margin:0;display:grid;place-items:center;font-size:10.5cqi;line-height:1;cursor:default;background:var(--sq-light);font-family:"Segoe UI Symbol","Noto Sans Symbols 2","DejaVu Sans",serif}
+.sq.d{background:var(--sq-dark)}
+.sq.last{background:var(--sq-last)} .sq.d.last{background:color-mix(in srgb,var(--sq-last) 70%,var(--sq-dark))}
+.sq.sel{background:var(--sq-sel)}
+.sq.can{cursor:pointer}
+.sq:focus-visible{outline:3px solid var(--accent);outline-offset:-3px;z-index:1}
+.sq.tgt::after{content:"";position:absolute;width:30%;height:30%;border-radius:50%;background:rgba(20,30,20,.32)}
+.sq.tgt.cap::after{width:86%;height:86%;background:none;border:4px solid rgba(20,30,20,.35);box-sizing:border-box}
+.pc.w{color:var(--white-piece);text-shadow:0 0 1px #000,0 0 1px #000,0 1px 2px rgba(0,0,0,.6)}
+.pc.b{color:var(--black-piece);text-shadow:0 0 1px rgba(255,255,255,.5)}
+.coord{position:absolute;font:600 2.2cqi/1 var(--f-mono);color:var(--sq-dark);pointer-events:none}
+.sq.d .coord{color:var(--sq-light)}
+.coord.f{right:3%;bottom:3%} .coord.r{left:4%;top:4%}
+
+.teams{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:420px){.teams{grid-template-columns:1fr}}
+.team{border:1px solid var(--line);border-radius:8px;padding:12px;display:grid;gap:8px;align-content:start}
+.team.active{border-color:var(--accent)}
+.team h3{margin:0;display:flex;align-items:center;gap:8px;font:600 15px var(--f-body)}
+.team ol{margin:0;padding:0;list-style:none;display:grid;gap:4px;font-size:14px}
+.team li{display:flex;align-items:center;gap:8px;min-height:26px;padding:2px 6px;border-radius:6px}
+.team li.now{background:color-mix(in srgb,var(--accent) 18%,transparent);font-weight:600}
+.team li.empty{color:var(--muted);font-style:italic}
+.tag{font-size:11px;padding:1px 6px;border-radius:99px;border:1px solid var(--line);color:var(--muted);white-space:nowrap}
+.team li.now .tag{border-color:var(--accent);color:var(--accent)}
+.num{font:500 12px var(--f-mono);color:var(--muted);width:14px}
+
+button.btn{font:600 14px var(--f-body);padding:9px 14px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer}
+button.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+button.btn:disabled{opacity:.45;cursor:not-allowed}
+button.btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+button.btn.danger{color:var(--warn);border-color:var(--warn)}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+
+.moves{font:400 13px/1.6 var(--f-mono);max-height:220px;overflow:auto;display:grid;grid-template-columns:2.4em 1fr 1fr;gap:0 8px;font-variant-numeric:tabular-nums}
+.moves .n{color:var(--muted)}
+.moves span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.moves small{color:var(--muted);font-family:var(--f-body);font-size:11px}
+
+.qr{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.qr .code{background:#fff;padding:8px;border-radius:8px;width:150px;height:150px;flex:none}
+.qr .code svg{width:100%;height:100%;display:block}
+.qr p{margin:0;color:var(--muted);font-size:13px;max-width:34ch}
+.note{color:var(--muted);font-size:13px;margin:0}
+.toast{color:var(--warn);font-size:13px;margin:0}
+@media (prefers-reduced-motion:no-preference){.sq{transition:background-color .12s}}
+</style>
+</head><body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Teamschaak <span>3 tegen 3</span></h1>
+      <p class="sub">Twee teams van drie. Binnen je team doe je om de beurt een zet.</p>
+    </div>
+    <span class="conn" id="conn">Verbinden…</span>
+  </header>
+
+  <section class="boardbox" aria-label="Schaakbord">
+    <div class="status" id="status"><span class="dot w" id="statusDot"></span><div><b id="statusMain">Spel laden…</b><small id="statusSub">Even geduld, de stand wordt opgehaald.</small></div></div>
+    <div class="board" id="board" role="grid"></div>
+    <p class="toast" id="toast" hidden></p>
+  </section>
+
+  <div class="side">
+    <section class="panel">
+      <div class="row" style="justify-content:space-between"><h2>Teams</h2><span class="label">max. 3 per team</span></div>
+      <label class="label" for="name">Jouw naam</label>
+      <div class="namebox"><input id="name" maxlength="20" placeholder="Bijv. Boaz" autocomplete="nickname"></div>
+      <div class="teams">
+        <div class="team" id="team-w"><h3><span class="dot w"></span>Wit</h3><ol id="list-w"></ol><button class="btn" id="join-w" type="button">Bij Wit</button></div>
+        <div class="team" id="team-b"><h3><span class="dot b"></span>Zwart</h3><ol id="list-b"></ol><button class="btn" id="join-b" type="button">Bij Zwart</button></div>
+      </div>
+      <div class="row"><button class="btn" id="leave" type="button" hidden>Team verlaten</button></div>
+    </section>
+
+    <section class="panel">
+      <div class="row" style="justify-content:space-between"><h2>Zetten</h2><span class="label" id="moveCount">0 zetten</span></div>
+      <div class="moves" id="moves"></div>
+      <div class="row">
+        <button class="btn danger" id="reset" type="button">Nieuw spel</button>
+        <button class="btn danger" id="resetYes" type="button" hidden>Ja, bord resetten</button>
+        <button class="btn" id="resetNo" type="button" hidden>Annuleren</button>
+        <button class="btn danger" id="kick" type="button" hidden>Teams leegmaken</button>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Meedoen</h2>
+      <div class="qr"><div class="code" id="qr"></div><p>Scan de code met je telefoon, vul je naam in en kies een team. Inloggen is niet nodig.</p></div>
+    </section>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+<script src="https://unpkg.com/qrcode-generator@1.4.4/qrcode.js"></script>
+<script src="https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js"></script>
+<script>
+const ROOM = (new URLSearchParams(location.search).get("room") || "delft-827a79aa").replace(/[^a-zA-Z0-9_-]/g,"");
+const TOPIC = "teamschaak/v1/" + ROOM + "/state";
+const BROKERS = ["wss://broker.emqx.io:8084/mqtt", "wss://broker.hivemq.com:8884/mqtt"];
+const GLYPH = {k:"♚",q:"♛",r:"♜",b:"♝",n:"♞",p:"♟︎"};
+const NAMES = {w:"Wit", b:"Zwart"};
+const $ = id => document.getElementById(id);
+const store = { get(k){ try{return localStorage.getItem(k)}catch(e){return null} }, set(k,v){ try{localStorage.setItem(k,v)}catch(e){} } };
+
+let me = store.get("ts-id"); if(!me){ me = Math.random().toString(36).slice(2,10); store.set("ts-id", me); }
+$("name").value = store.get("ts-name") || "";
+$("name").addEventListener("input", ()=>store.set("ts-name", $("name").value.trim()));
+
+let client = null, connected = false, state = null, selected = null;
+
+function fresh(){ return {v:0, fen:new Chess().fen(), moves:[], teams:{w:[],b:[]}, idx:{w:0,b:0}, last:null}; }
+function cur(){ return state || fresh(); }
+function clone(o){ return JSON.parse(JSON.stringify(o)); }
+function toast(msg){ const t=$("toast"); t.textContent=msg||""; t.hidden=!msg; }
+function nameOf(p){ return p ? (p.name||"Speler") + (p.id===me?" (jij)":"") : ""; }
+function nameById(s, id){ const p=[...s.teams.w, ...s.teams.b].find(x=>x.id===id); return p?p.name:""; }
+
+function whoseTurn(s, game){
+  const color = game.turn(); const team = s.teams[color] || [];
+  if(!team.length) return {color, player:null, next:null};
+  const i = (s.idx[color]||0) % team.length;
+  return {color, player:team[i], next:team.length>1 ? team[(i+1)%team.length] : null};
+}
+function myColor(s){ if(s.teams.w.some(p=>p.id===me)) return "w"; if(s.teams.b.some(p=>p.id===me)) return "b"; return null; }
+
+function render(){
+  const s = cur(); const game = new Chess(s.fen); const t = whoseTurn(s, game);
+  const mine = myColor(s);
+  const myTurn = connected && t.player && t.player.id===me && !game.game_over();
+
+  $("statusDot").className = "dot "+t.color;
+  $("status").classList.toggle("me", !!myTurn);
+  let main, sub;
+  if(game.in_checkmate()){ main = "Schaakmat. "+NAMES[t.color==="w"?"b":"w"]+" wint!"; sub = "Druk op Nieuw spel om opnieuw te beginnen."; }
+  else if(game.in_draw()){ main = "Remise."; sub = game.in_stalemate()?"Pat: geen legale zetten meer.":"Geen winnaar dit keer."; }
+  else if(!t.player){ main = NAMES[t.color]+" is aan zet"; sub = "Nog niemand in team "+NAMES[t.color]+". Vul je naam in en kies een team."; }
+  else if(myTurn){ main = "Jij bent aan zet"+(game.in_check()?" — schaak!":""); sub = "Tik op een stuk en daarna op het veld waar het heen moet."; }
+  else { main = nameOf(t.player)+" is aan zet ("+NAMES[t.color]+")"+(game.in_check()?" — schaak!":""); sub = t.next ? "Daarna in dit team: "+nameOf(t.next) : "Wacht op je beurt."; }
+  $("statusMain").textContent = main; $("statusSub").textContent = sub;
+
+  const flip = mine==="b"; const files = "abcdefgh";
+  const targets = {}; if(selected) game.moves({square:selected, verbose:true}).forEach(m=>targets[m.to]=m);
+  const board = $("board"); board.innerHTML="";
+  for(let r=0;r<8;r++) for(let c=0;c<8;c++){
+    const rank = flip ? r+1 : 8-r, file = flip ? files[7-c] : files[c], sq = file+rank;
+    const piece = game.get(sq);
+    const el = document.createElement("button");
+    el.type="button"; el.className="sq"+(((c+r)%2)?" d":"");
+    el.setAttribute("aria-label", sq+(piece?" "+(piece.color==="w"?"wit ":"zwart ")+piece.type:""));
+    if(s.last && (s.last.from===sq || s.last.to===sq)) el.classList.add("last");
+    if(selected===sq) el.classList.add("sel");
+    if(targets[sq]){ el.classList.add("tgt","can"); if(piece) el.classList.add("cap"); }
+    if(myTurn && piece && piece.color===t.color) el.classList.add("can");
+    if(piece){ const p=document.createElement("span"); p.className="pc "+piece.color; p.textContent=GLYPH[piece.type]; el.appendChild(p); }
+    if(c===0){ const k=document.createElement("span"); k.className="coord r"; k.textContent=rank; el.appendChild(k); }
+    if(r===7){ const k=document.createElement("span"); k.className="coord f"; k.textContent=file; el.appendChild(k); }
+    el.addEventListener("click", ()=>onSquare(sq));
+    board.appendChild(el);
+  }
+
+  for(const col of ["w","b"]){
+    const list = $("list-"+col); list.innerHTML=""; const team = s.teams[col];
+    for(let i=0;i<3;i++){
+      const li=document.createElement("li");
+      const n=document.createElement("span"); n.className="num"; n.textContent=i+1; li.appendChild(n);
+      if(team[i]){
+        const nm=document.createElement("span"); nm.textContent=nameOf(team[i]); li.appendChild(nm);
+        if(i===(s.idx[col]||0)%team.length){
+          if(col===t.color && !game.game_over()) li.classList.add("now");
+          const tag=document.createElement("span"); tag.className="tag"; tag.textContent = col===t.color ? "aan zet" : "volgende"; li.appendChild(tag);
+        }
+      } else { li.classList.add("empty"); li.appendChild(document.createTextNode("vrije plek")); }
+      list.appendChild(li);
+    }
+    $("team-"+col).classList.toggle("active", col===t.color);
+    const btn=$("join-"+col);
+    btn.hidden = mine===col; btn.disabled = !connected || team.length>=3;
+    btn.textContent = team.length>=3 ? "Vol" : "Bij "+NAMES[col];
+  }
+  $("leave").hidden = !mine;
+
+  const mv=$("moves"); mv.innerHTML="";
+  $("moveCount").textContent = s.moves.length+(s.moves.length===1?" zet":" zetten");
+  if(!s.moves.length){ const e=document.createElement("span"); e.style.cssText="grid-column:1/4;color:var(--muted);font-family:var(--f-body)"; e.textContent="Nog geen zetten. Wit begint."; mv.appendChild(e); }
+  for(let i=0;i<s.moves.length;i+=2){
+    const n=document.createElement("span"); n.className="n"; n.textContent=(i/2+1)+"."; mv.appendChild(n);
+    for(const m of [s.moves[i], s.moves[i+1]]){
+      const sp=document.createElement("span");
+      if(m){ sp.textContent=m.san+" "; const sm=document.createElement("small"); sm.textContent=m.name||""; sp.appendChild(sm); }
+      mv.appendChild(sp);
+    }
+  }
+  mv.scrollTop = mv.scrollHeight;
+}
+
+function save(next){
+  if(!client || !connected){ toast("Geen verbinding. Wacht even of herlaad de pagina."); return; }
+  next.v = (cur().v||0) + 1;
+  state = next; render();
+  client.publish(TOPIC, JSON.stringify(next), {qos:1, retain:true}, err=>{ if(err) toast("Versturen lukte niet. Probeer het opnieuw."); else toast(""); });
+}
+
+function onSquare(sq){
+  const s = cur(); const game = new Chess(s.fen); const t = whoseTurn(s, game);
+  if(!connected || !t.player || t.player.id!==me || game.game_over()){ if(selected){selected=null; render();} return; }
+  const piece = game.get(sq);
+  if(selected){
+    const ok = game.moves({square:selected, verbose:true}).some(x=>x.to===sq);
+    if(ok){
+      const res = game.move({from:selected, to:sq, promotion:"q"}); selected=null;
+      const next = clone(s);
+      next.fen = game.fen();
+      next.moves.push({san:res.san, id:me, name:t.player.name, color:t.color});
+      next.idx[t.color] = ((s.idx[t.color]||0)+1) % Math.max(1, s.teams[t.color].length);
+      next.last = {from:res.from, to:res.to};
+      save(next); return;
+    }
+  }
+  selected = (piece && piece.color===t.color && sq!==selected) ? sq : null;
+  render();
+}
+
+function fixIdx(s){ for(const c of ["w","b"]) s.idx[c] = s.teams[c].length ? (s.idx[c]||0) % s.teams[c].length : 0; }
+function join(col){
+  const name = $("name").value.trim();
+  if(!name){ toast("Vul eerst je naam in."); $("name").focus(); return; }
+  const s = clone(cur());
+  if(s.teams[col].length>=3 && !s.teams[col].some(p=>p.id===me)) return;
+  for(const c of ["w","b"]) s.teams[c] = s.teams[c].filter(p=>p.id!==me);
+  s.teams[col].push({id:me, name}); fixIdx(s); selected=null; save(s);
+}
+function leave(){ const s = clone(cur()); for(const c of ["w","b"]) s.teams[c]=s.teams[c].filter(p=>p.id!==me); fixIdx(s); save(s); }
+
+$("join-w").addEventListener("click",()=>join("w"));
+$("join-b").addEventListener("click",()=>join("b"));
+$("leave").addEventListener("click",leave);
+let resetMode = null;
+function showConfirm(mode){ resetMode=mode; $("reset").hidden=!!mode; $("kick").hidden=!!mode; $("resetYes").hidden=!mode; $("resetNo").hidden=!mode;
+  $("resetYes").textContent = mode==="teams" ? "Ja, teams leegmaken" : "Ja, bord resetten"; if(!mode) $("kick").hidden=false; }
+$("reset").addEventListener("click",()=>showConfirm("board"));
+$("kick").addEventListener("click",()=>showConfirm("teams"));
+$("kick").hidden=false;
+$("resetNo").addEventListener("click",()=>showConfirm(null));
+$("resetYes").addEventListener("click",()=>{
+  const s = cur(); const n = fresh();
+  if(resetMode==="board"){ n.teams = clone(s.teams); }
+  showConfirm(null); selected=null; save(n);
+});
+
+function drawQR(){
+  const box=$("qr"); const url = location.href.split("#")[0];
+  try{ const q=qrcode(0,"M"); q.addData(url); q.make(); box.innerHTML=q.createSvgTag({cellSize:4, margin:0, scalable:true}); }catch(e){ box.hidden=true; }
+}
+
+function setConn(ok, text){ const c=$("conn"); c.className="conn "+(ok?"ok":"bad"); c.textContent=text; }
+function connect(i){
+  const url = BROKERS[i % BROKERS.length];
+  let gotAny = false;
+  const cl = mqtt.connect(url, {clientId:"ts_"+me+"_"+Math.random().toString(36).slice(2,6), reconnectPeriod:3000, connectTimeout:8000, clean:true});
+  client = cl;
+  const failover = setTimeout(()=>{ if(!connected){ cl.end(true); connect(i+1); } }, 9000);
+  cl.on("connect", ()=>{
+    clearTimeout(failover);
+    cl.subscribe(TOPIC, {qos:1}, ()=>{
+      connected = true; setConn(true, "Verbonden"); render();
+      setTimeout(()=>{ if(!gotAny && !state){ $("statusMain").textContent="Nieuw spel"; render(); } }, 1500);
+    });
+  });
+  cl.on("message", (topic, payload)=>{
+    gotAny = true;
+    try{
+      const s = JSON.parse(payload.toString());
+      if(!s || !s.fen || !s.teams) return;
+      if(state && (s.v||0) < (state.v||0)) return;
+      s.idx = s.idx||{w:0,b:0}; s.moves = s.moves||[];
+      state = s;
+      if(selected){ const g=new Chess(s.fen); const p=g.get(selected); if(!p || p.color!==g.turn()) selected=null; }
+      render();
+    }catch(e){}
+  });
+  cl.on("offline", ()=>{ connected=false; setConn(false,"Verbinding kwijt, opnieuw verbinden…"); render(); });
+  cl.on("reconnect", ()=>setConn(false,"Opnieuw verbinden…"));
+}
+
+drawQR(); render();
+if(typeof mqtt==="undefined"){ setConn(false,"Kon niet laden"); toast("De pagina kon niet volledig laden. Herlaad de pagina."); }
+else connect(0);
+</script>
+
+</body></html>
