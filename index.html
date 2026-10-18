@@ -1,15 +1,16 @@
 <!doctype html>
 <html lang="nl"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Teamschaak 3 tegen 3</title>
+<title>Teamschaak</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
-/* Layout: één kolom op telefoon (status → bord → teams → zetten), twee kolommen op breed scherm */
+/* Layout: één kolom op telefoon (status → bord → panelen), twee kolommen op breed scherm */
 :root{
   --bg:#E8ECEE; --surface:#F7F9F9; --ink:#17202A; --muted:#5A6672; --line:#CBD3D8;
-  --accent:#1F6B57; --accent-ink:#FFFFFF; --warn:#B4551D;
+  --accent:#1F6B57; --accent-ink:#FFFFFF; --warn:#B4551D; --check:#E0392E;
   --sq-light:#E3E7D6; --sq-dark:#6E8E62; --sq-sel:#E8C547; --sq-last:#C9D98A;
   --white-piece:#FBFBF7; --black-piece:#161616;
+  --p-r:#D9473D; --p-b:#3E76D6; --p-y:#E9B526; --p-g:#3FA45B;
   --f-display:"Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
   --f-body:"IBM Plex Sans", system-ui, -apple-system, sans-serif;
   --f-mono:"IBM Plex Mono", ui-monospace, Menlo, monospace;
@@ -20,48 +21,68 @@
 :root[data-theme="dark"]{
   --bg:#11161A; --surface:#1A2127; --ink:#E5EAEE; --muted:#93A0AB; --line:#2C363E;
   --accent:#5FC0A1; --accent-ink:#0B1A15; --warn:#F09A5E; color-scheme:dark}
-body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.45;
-  padding-left:max(16px, env(safe-area-inset-left,0px));padding-right:max(16px, env(safe-area-inset-right,0px));padding-block:20px 32px;margin:0}
 *{box-sizing:border-box}
-.namebox{display:flex;gap:8px;flex-wrap:wrap}
-.namebox input{flex:1;min-width:0;font:15px var(--f-body);padding:9px 12px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink)}
-.conn{font-size:12px;color:var(--muted)}
-.conn.ok::before{content:"● ";color:var(--accent)}
-.conn.bad::before{content:"● ";color:var(--warn)}
-.wrap{max-width:1040px;margin:0 auto;display:grid;gap:20px;grid-template-columns:minmax(0,1fr)}
-@media (min-width:860px){.wrap{grid-template-columns:minmax(0,560px) minmax(0,1fr);align-items:start}}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.45;margin:0;
+  padding-left:max(16px, env(safe-area-inset-left,0px));padding-right:max(16px, env(safe-area-inset-right,0px));padding-block:20px 32px}
+.wrap{max-width:1080px;margin:0 auto;display:grid;gap:20px;grid-template-columns:minmax(0,1fr)}
+@media (min-width:860px){
+  .wrap{grid-template-columns:minmax(0,560px) minmax(0,1fr);align-items:start}
+  .m-vier .wrap{grid-template-columns:minmax(0,640px) minmax(0,1fr)}
+}
 header{grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:end;justify-content:space-between;gap:12px}
 h1{font-family:var(--f-display);font-weight:800;font-size:clamp(28px,6vw,40px);line-height:1;margin:0;letter-spacing:-.01em;text-wrap:balance}
 h1 span{color:var(--accent)}
-.sub{color:var(--muted);margin:6px 0 0}
+.sub{color:var(--muted);margin:6px 0 0;max-width:60ch}
+.headright{display:grid;gap:8px;justify-items:end}
+.tabs{display:flex;gap:4px;padding:4px;border-radius:10px;background:var(--surface);border:1px solid var(--line)}
+.tabs a{font:600 14px var(--f-body);padding:7px 12px;border-radius:7px;color:var(--muted);text-decoration:none}
+.tabs a[aria-current="page"]{background:var(--accent);color:var(--accent-ink)}
+.tabs a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 h2{font-family:var(--f-display);font-weight:600;font-size:18px;margin:0}
 .label{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600}
 .panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;display:grid;gap:12px}
 .side{display:grid;gap:16px;min-width:0}
+.conn{font-size:12px;color:var(--muted)}
+.conn.ok::before{content:"● ";color:var(--accent)}
+.conn.bad::before{content:"● ";color:var(--warn)}
+.namebox input{width:100%;font:15px var(--f-body);padding:9px 12px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink)}
 
 .status{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:10px;background:var(--surface);border:1px solid var(--line)}
 .status.me{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent) inset}
 .dot{width:18px;height:18px;border-radius:50%;flex:none;border:2px solid var(--ink)}
 .dot.w{background:var(--white-piece)} .dot.b{background:var(--black-piece)}
+.dot.c-r{background:var(--p-r)} .dot.c-b{background:var(--p-b)} .dot.c-y{background:var(--p-y)} .dot.c-g{background:var(--p-g)}
+.dot.sm{width:12px;height:12px;border-width:1.5px}
 .status b{font-weight:600}
 .status small{display:block;color:var(--muted)}
 
-.boardbox{display:grid;gap:10px}
-.board{container-type:inline-size;width:100%;max-width:560px;aspect-ratio:1;display:grid;grid-template-columns:repeat(8,minmax(0,1fr));grid-template-rows:repeat(8,minmax(0,1fr));
+.boardbox{display:grid;gap:10px;min-width:0}
+.board{--n:8;position:relative;container-type:inline-size;width:100%;max-width:560px;aspect-ratio:1;display:grid;
+  grid-template-columns:repeat(var(--n),minmax(0,1fr));grid-template-rows:repeat(var(--n),minmax(0,1fr));
   border-radius:6px;overflow:hidden;border:3px solid var(--sq-dark);user-select:none;-webkit-user-select:none;touch-action:manipulation}
-.sq{position:relative;border:0;padding:0;margin:0;width:100%;height:100%;min-width:0;min-height:0;overflow:hidden;border-radius:0;display:grid;place-items:center;font-size:10.5cqi;line-height:1;cursor:default;background:var(--sq-light);font-family:"Segoe UI Symbol","Noto Sans Symbols 2","DejaVu Sans",serif}
+.board.vier{--n:14;max-width:640px;border-color:transparent;border-radius:0}
+.sq{position:relative;border:0;padding:0;margin:0;width:100%;height:100%;min-width:0;min-height:0;overflow:hidden;border-radius:0;display:grid;place-items:center;font-size:10.5cqi;line-height:1;cursor:default;background:var(--sq-light);color:inherit;font-family:"Segoe UI Symbol","Noto Sans Symbols 2","DejaVu Sans",serif}
+.board.vier .sq{font-size:6.1cqi}
 .sq.d{background:var(--sq-dark)}
+.sq.void{background:transparent}
 .sq.last{background:var(--sq-last)} .sq.d.last{background:color-mix(in srgb,var(--sq-last) 70%,var(--sq-dark))}
 .sq.sel{background:var(--sq-sel)}
 .sq.can{cursor:pointer}
 .sq:focus-visible{outline:3px solid var(--accent);outline-offset:-3px;z-index:1}
+.sq.chk::before{content:"";position:absolute;inset:4%;border-radius:50%;background:radial-gradient(circle,var(--check) 0%,color-mix(in srgb,var(--check) 40%,transparent) 55%,transparent 72%)}
 .sq.tgt::after{content:"";position:absolute;width:30%;height:30%;border-radius:50%;background:rgba(20,30,20,.32)}
-.sq.tgt.cap::after{width:86%;height:86%;background:none;border:4px solid rgba(20,30,20,.35);box-sizing:border-box}
+.sq.tgt.cap::after{width:86%;height:86%;background:none;border:4px solid rgba(20,30,20,.35)}
+.board.vier .sq.tgt.cap::after{border-width:3px}
+.pc{position:relative;z-index:1}
 .pc.w{color:var(--white-piece);text-shadow:0 0 1px #000,0 0 1px #000,0 1px 2px rgba(0,0,0,.6)}
 .pc.b{color:var(--black-piece);text-shadow:0 0 1px rgba(255,255,255,.5)}
+.pc.c-r,.pc.c-b,.pc.c-y,.pc.c-g{text-shadow:0 0 1px #000,0 0 1px #000,0 0 1px #000}
+.pc.c-r{color:var(--p-r)} .pc.c-b{color:var(--p-b)} .pc.c-y{color:var(--p-y)} .pc.c-g{color:var(--p-g)}
 .coord{position:absolute;font:600 2.2cqi/1 var(--f-mono);color:var(--sq-dark);pointer-events:none}
 .sq.d .coord{color:var(--sq-light)}
 .coord.f{right:3%;bottom:3%} .coord.r{left:4%;top:4%}
+.arrows{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:2}
 
 .teams{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 @media (max-width:420px){.teams{grid-template-columns:1fr}}
@@ -73,20 +94,41 @@ h2{font-family:var(--f-display);font-weight:600;font-size:18px;margin:0}
 .team li.now{background:color-mix(in srgb,var(--accent) 18%,transparent);font-weight:600}
 .team li.empty{color:var(--muted);font-style:italic}
 .tag{font-size:11px;padding:1px 6px;border-radius:99px;border:1px solid var(--line);color:var(--muted);white-space:nowrap}
-.team li.now .tag{border-color:var(--accent);color:var(--accent)}
+.team li.now .tag,.seat.now .tag{border-color:var(--accent);color:var(--accent)}
 .num{font:500 12px var(--f-mono);color:var(--muted);width:14px}
 
+.seats{display:grid;gap:6px}
+.seat{display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;min-height:46px}
+.seat.now{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 10%,transparent)}
+.seat.out{opacity:.55}
+.seat .who{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.seat .who b{font-weight:600}
+.seat .who.empty{color:var(--muted);font-style:italic}
+
+.sugg{display:grid;gap:8px}
+.sugg-item{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:8px 10px;border:1px solid var(--line);border-radius:8px}
+.sugg-item .sw{width:14px;height:4px;border-radius:2px;flex:none}
+.sugg-item .txt{flex:1;min-width:8em}
+.sugg-item .mv{font:500 14px var(--f-mono)}
+.sugg-item small{color:var(--muted);display:block;font-size:12px}
+.chip{font:600 12px var(--f-body);padding:2px 8px;border-radius:99px;border:1px solid var(--line);color:var(--muted);white-space:nowrap}
+.chip.full{border-color:var(--accent);color:var(--accent)}
+
 button.btn{font:600 14px var(--f-body);padding:9px 14px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer}
+button.btn.sm{padding:5px 10px;font-size:13px}
 button.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+button.btn[aria-pressed="true"]{background:color-mix(in srgb,var(--accent) 18%,var(--surface));border-color:var(--accent);color:var(--ink)}
 button.btn:disabled{opacity:.45;cursor:not-allowed}
 button.btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 button.btn.danger{color:var(--warn);border-color:var(--warn)}
 .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 
 .moves{font:400 13px/1.6 var(--f-mono);max-height:220px;overflow:auto;display:grid;grid-template-columns:2.4em 1fr 1fr;gap:0 8px;font-variant-numeric:tabular-nums}
+.moves.one{grid-template-columns:2.4em 1fr}
 .moves .n{color:var(--muted)}
 .moves span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .moves small{color:var(--muted);font-family:var(--f-body);font-size:11px}
+.moves .sys{color:var(--warn);font-family:var(--f-body)}
 
 .qr{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
 .qr .code{background:#fff;padding:8px;border-radius:8px;width:150px;height:150px;flex:none}
@@ -100,10 +142,13 @@ button.btn.danger{color:var(--warn);border-color:var(--warn)}
 <div class="wrap">
   <header>
     <div>
-      <h1>Teamschaak <span>3 tegen 3</span></h1>
-      <p class="sub">Twee teams van drie. Binnen je team doe je om de beurt een zet.</p>
+      <h1>Teamschaak <span id="title2">3 tegen 3</span></h1>
+      <p class="sub" id="sub">Twee teams van drie. Binnen je team doe je om de beurt een zet.</p>
     </div>
-    <span class="conn" id="conn">Verbinden…</span>
+    <div class="headright">
+      <nav class="tabs" aria-label="Spelvorm"><a data-mode="team" href="?">3 tegen 3</a><a data-mode="vier" href="?mode=vier">4 spelers</a></nav>
+      <span class="conn" id="conn">Verbinden…</span>
+    </div>
   </header>
 
   <section class="boardbox" aria-label="Schaakbord">
@@ -114,14 +159,34 @@ button.btn.danger{color:var(--warn);border-color:var(--warn)}
 
   <div class="side">
     <section class="panel">
-      <div class="row" style="justify-content:space-between"><h2>Teams</h2><span class="label">max. 3 per team</span></div>
       <label class="label" for="name">Jouw naam</label>
       <div class="namebox"><input id="name" maxlength="20" placeholder="Bijv. Boaz" autocomplete="nickname"></div>
-      <div class="teams">
-        <div class="team" id="team-w"><h3><span class="dot w"></span>Wit</h3><ol id="list-w"></ol><button class="btn" id="join-w" type="button">Bij Wit</button></div>
-        <div class="team" id="team-b"><h3><span class="dot b"></span>Zwart</h3><ol id="list-b"></ol><button class="btn" id="join-b" type="button">Bij Zwart</button></div>
+      <div id="p-teams">
+        <div class="row" style="justify-content:space-between;margin-bottom:12px"><h2>Teams</h2><span class="label">max. 3 per team</span></div>
+        <div class="teams">
+          <div class="team" id="team-w"><h3><span class="dot w"></span>Wit</h3><ol id="list-w"></ol><button class="btn" id="join-w" type="button">Bij Wit</button></div>
+          <div class="team" id="team-b"><h3><span class="dot b"></span>Zwart</h3><ol id="list-b"></ol><button class="btn" id="join-b" type="button">Bij Zwart</button></div>
+        </div>
+        <div class="row" style="margin-top:12px"><button class="btn" id="leave" type="button" hidden>Team verlaten</button></div>
       </div>
-      <div class="row"><button class="btn" id="leave" type="button" hidden>Team verlaten</button></div>
+      <div id="p-seats" hidden>
+        <div class="row" style="justify-content:space-between;margin-bottom:12px"><h2>Spelers</h2><span class="label">1 per kleur</span></div>
+        <div class="seats" id="seats"></div>
+        <div class="row" style="margin-top:12px">
+          <button class="btn primary" id="start4" type="button">Start spel</button>
+          <button class="btn" id="leave4" type="button" hidden>Plek vrijgeven</button>
+          <button class="btn danger" id="resign" type="button" hidden>Opgeven</button>
+          <button class="btn danger" id="resignYes" type="button" hidden>Ja, ik geef op</button>
+          <button class="btn" id="resignNo" type="button" hidden>Annuleren</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel" id="p-sugg" hidden>
+      <div class="row" style="justify-content:space-between"><h2>Voorstellen</h2><span class="label">alleen jouw team</span></div>
+      <p class="note" id="suggHint"></p>
+      <div class="row"><button class="btn" id="suggMode" type="button" aria-pressed="false" hidden>Zet voorstellen</button></div>
+      <div class="sugg" id="suggList"></div>
     </section>
 
     <section class="panel">
@@ -129,15 +194,15 @@ button.btn.danger{color:var(--warn);border-color:var(--warn)}
       <div class="moves" id="moves"></div>
       <div class="row">
         <button class="btn danger" id="reset" type="button">Nieuw spel</button>
+        <button class="btn danger" id="kick" type="button">Teams leegmaken</button>
         <button class="btn danger" id="resetYes" type="button" hidden>Ja, bord resetten</button>
         <button class="btn" id="resetNo" type="button" hidden>Annuleren</button>
-        <button class="btn danger" id="kick" type="button" hidden>Teams leegmaken</button>
       </div>
     </section>
 
     <section class="panel">
       <h2>Meedoen</h2>
-      <div class="qr"><div class="code" id="qr"></div><p>Scan de code met je telefoon, vul je naam in en kies een team. Inloggen is niet nodig.</p></div>
+      <div class="qr"><div class="code" id="qr"></div><p>Scan de code met je telefoon, vul je naam in en kies een plek. Inloggen is niet nodig.</p></div>
     </section>
   </div>
 </div>
@@ -146,27 +211,151 @@ button.btn.danger{color:var(--warn);border-color:var(--warn)}
 <script src="https://unpkg.com/qrcode-generator@1.4.4/qrcode.js"></script>
 <script src="https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js"></script>
 <script>
-const ROOM = (new URLSearchParams(location.search).get("room") || "delft-827a79aa").replace(/[^a-zA-Z0-9_-]/g,"");
-const TOPIC = "teamschaak/v1/" + ROOM + "/state";
+/*ENGINE4-START*/
+const COLS = ["r","b","y","g"];
+const CNAME = {r:"Rood", b:"Blauw", y:"Geel", g:"Groen"};
+const FWD = {r:[-1,0], y:[1,0], b:[0,1], g:[0,-1]};
+const GLY4 = {K:"♚",Q:"♛",R:"♜",B:"♝",N:"♞",P:"♟︎"};
+function onBoard(r,c){ return r>=0 && r<14 && c>=0 && c<14 && !((r<3||r>10) && (c<3||c>10)); }
+function startBoard(){
+  const B = new Array(196).fill(null);
+  const back = "RNBQKBNR", backK = "RNBKQBNR";
+  for(let i=0;i<8;i++){
+    B[13*14+3+i] = "r"+back[i];  B[12*14+3+i] = "rP";
+    B[0*14+3+i]  = "y"+backK[i]; B[1*14+3+i]  = "yP";
+    B[(3+i)*14+0]  = "b"+backK[i]; B[(3+i)*14+1]  = "bP";
+    B[(3+i)*14+13] = "g"+back[i];  B[(3+i)*14+12] = "gP";
+  }
+  return B;
+}
+function pawnStart(col,r,c){ return (col==="r"&&r===12)||(col==="y"&&r===1)||(col==="b"&&c===1)||(col==="g"&&c===12); }
+function promoLine(col,r,c){ return (col==="r"&&r===6)||(col==="y"&&r===7)||(col==="b"&&c===7)||(col==="g"&&c===6); }
+const DIAG=[[1,1],[1,-1],[-1,1],[-1,-1]], ORTH=[[1,0],[-1,0],[0,1],[0,-1]];
+const KNIGHT=[[1,2],[2,1],[-1,2],[-2,1],[1,-2],[2,-1],[-1,-2],[-2,-1]];
+function pseudo(B, sq, attacksOnly){
+  const p = B[sq]; if(!p) return [];
+  const col = p[0], t = p[1], r = Math.floor(sq/14), c = sq%14, out = [];
+  const step = (rr,cc)=>{ if(!onBoard(rr,cc)) return false; const q = B[rr*14+cc];
+    if(!q){ out.push(rr*14+cc); return true; } if(q[0]!==col) out.push(rr*14+cc); return false; };
+  if(t==="N"){ for(const [a,b] of KNIGHT) step(r+a,c+b); }
+  else if(t==="K"){ for(const [a,b] of DIAG.concat(ORTH)) step(r+a,c+b); }
+  else if(t==="P"){
+    const [fr,fc] = FWD[col]; const pr = fc!==0?1:0, pc = fr!==0?1:0;
+    if(!attacksOnly){
+      const r1=r+fr, c1=c+fc;
+      if(onBoard(r1,c1) && !B[r1*14+c1]){ out.push(r1*14+c1);
+        if(pawnStart(col,r,c)){ const r2=r1+fr, c2=c1+fc; if(onBoard(r2,c2) && !B[r2*14+c2]) out.push(r2*14+c2); } }
+    }
+    for(const s of [1,-1]){ const rr=r+fr+pr*s, cc=c+fc+pc*s; if(!onBoard(rr,cc)) continue;
+      const q = B[rr*14+cc]; if(attacksOnly || (q && q[0]!==col)) out.push(rr*14+cc); }
+  } else {
+    const dirs = t==="B" ? DIAG : t==="R" ? ORTH : DIAG.concat(ORTH);
+    for(const [a,b] of dirs){ let rr=r+a, cc=c+b; while(step(rr,cc)){ rr+=a; cc+=b; } }
+  }
+  return out;
+}
+function inCheck(B, col){
+  const ks = B.indexOf(col+"K"); if(ks<0) return true;
+  for(let i=0;i<196;i++){ const p=B[i]; if(p && p[0]!==col && pseudo(B,i,true).includes(ks)) return true; }
+  return false;
+}
+function applyMove(B, from, to){
+  const N = B.slice(); const p = N[from]; N[to] = p; N[from] = null;
+  if(p[1]==="P" && promoLine(p[0], Math.floor(to/14), to%14)) N[to] = p[0]+"Q";
+  return N;
+}
+function legalMoves(B, col){
+  const out = [];
+  for(let i=0;i<196;i++){ const p=B[i]; if(!p || p[0]!==col) continue;
+    for(const to of pseudo(B,i,false)){ if(!inCheck(applyMove(B,i,to), col)) out.push({from:i,to}); } }
+  return out;
+}
+function sqName4(i){ return "abcdefghijklmn"[i%14] + (14-Math.floor(i/14)); }
+function fresh4(){ return {v:0, board:startBoard(), turn:0, alive:{r:true,b:true,y:true,g:true}, seats:{r:null,b:null,y:null,g:null}, started:false, moves:[], last:null, winner:null}; }
+function eliminate(s, col, why){
+  if(!s.alive[col]) return;
+  s.alive[col] = false;
+  s.board = s.board.map(p => p && p[0]===col ? null : p);
+  if(why) s.moves.push({sys:true, t: CNAME[col]+" ligt eruit ("+why+")"});
+}
+function checkWinner(s){ const alive = COLS.filter(c=>s.alive[c]); if(alive.length<=1){ s.winner = alive[0] || "none"; return true; } return false; }
+function advance(s){
+  for(let g=0; g<8; g++){
+    if(checkWinner(s)) return;
+    s.turn = (s.turn+1) % 4; const col = COLS[s.turn];
+    if(!s.alive[col]) continue;
+    if(s.board.indexOf(col+"K")<0){ eliminate(s,col,"koning geslagen"); continue; }
+    if(!legalMoves(s.board,col).length){ eliminate(s,col, inCheck(s.board,col) ? "schaakmat" : "pat"); continue; }
+    return;
+  }
+  checkWinner(s);
+}
+function startGame4(s){
+  for(const c of COLS) if(!s.seats[c]) eliminate(s, c, null);
+  s.started = true; s.turn = 3; s.moves.push({sys:true, t:"Spel gestart"});
+  advance(s);
+}
+function move4(s, from, to, name){
+  const col = COLS[s.turn]; const p = s.board[from]; const cap = s.board[to];
+  s.board = applyMove(s.board, from, to);
+  s.last = {from, to};
+  s.moves.push({col, name, t: GLY4[p[1]]+" "+sqName4(from)+(cap?"×":"–")+sqName4(to)+(cap && cap[1]==="K" ? " (koning geslagen!)" : "")});
+  advance(s);
+}
+/*ENGINE4-END*/
+
+const params = new URLSearchParams(location.search);
+const MODE = params.get("mode")==="vier" ? "vier" : "team";
+const ROOM = ((params.get("room") || "delft-827a79aa").replace(/[^a-zA-Z0-9_-]/g,"").slice(0,40)) || "delft-827a79aa";
+const BASE = "teamschaak/v1/" + ROOM;
+const TOPIC = MODE==="team" ? BASE+"/state" : BASE+"/vier";
+const SUGG = BASE + "/sugg/";
 const BROKERS = ["wss://broker.emqx.io:8084/mqtt", "wss://broker.hivemq.com:8884/mqtt"];
 const GLYPH = {k:"♚",q:"♛",r:"♜",b:"♝",n:"♞",p:"♟︎"};
 const NAMES = {w:"Wit", b:"Zwart"};
+const SUGC = ["#2E7FD9","#E07B24","#9B4FD1"];
 const $ = id => document.getElementById(id);
 const store = { get(k){ try{return localStorage.getItem(k)}catch(e){return null} }, set(k,v){ try{localStorage.setItem(k,v)}catch(e){} } };
 
 let me = store.get("ts-id"); if(!me){ me = Math.random().toString(36).slice(2,10); store.set("ts-id", me); }
 $("name").value = store.get("ts-name") || "";
 $("name").addEventListener("input", ()=>store.set("ts-name", $("name").value.trim()));
+function myName(){ return $("name").value.trim(); }
 
 let client = null, connected = false, state = null, selected = null;
+let sugg = {};
+let mySug = {fen:null, from:null, to:null, san:null, approves:[]};
+let suggestMode = false;
 
-function fresh(){ return {v:0, fen:new Chess().fen(), moves:[], teams:{w:[],b:[]}, idx:{w:0,b:0}, last:null}; }
-function cur(){ return state || fresh(); }
+document.body.classList.add("m-"+MODE);
+for(const a of document.querySelectorAll(".tabs a")){
+  const p = new URLSearchParams(location.search);
+  if(a.dataset.mode==="vier") p.set("mode","vier"); else p.delete("mode");
+  const q = p.toString(); a.href = location.pathname + (q ? "?"+q : "");
+  if(a.dataset.mode===MODE) a.setAttribute("aria-current","page");
+}
+if(MODE==="vier"){
+  $("title2").textContent = "4 spelers";
+  $("sub").textContent = "Vier kanten, ieder voor zich. Schaakmat of pat betekent dat je eruit ligt; wie als laatste overblijft wint.";
+  $("p-teams").hidden = true; $("p-seats").hidden = false; $("kick").textContent = "Plekken leegmaken";
+  $("board").classList.add("vier"); $("moves").classList.add("one");
+}
+
 function clone(o){ return JSON.parse(JSON.stringify(o)); }
 function toast(msg){ const t=$("toast"); t.textContent=msg||""; t.hidden=!msg; }
-function nameOf(p){ return p ? (p.name||"Speler") + (p.id===me?" (jij)":"") : ""; }
-function nameById(s, id){ const p=[...s.teams.w, ...s.teams.b].find(x=>x.id===id); return p?p.name:""; }
+function cur(){ return state || (MODE==="team" ? freshTeam() : fresh4()); }
+function save(next){
+  if(!client || !connected){ toast("Geen verbinding. Wacht even of herlaad de pagina."); return; }
+  next.v = (cur().v||0) + 1;
+  state = next; selected = null; render();
+  client.publish(TOPIC, JSON.stringify(next), {qos:1, retain:true}, err=>{ if(err) toast("Versturen lukte niet. Probeer het opnieuw."); else toast(""); });
+}
+function render(){ if(MODE==="team") renderTeam(); else render4(); }
+function needName(){ if(!myName()){ toast("Vul eerst je naam in."); $("name").focus(); return true; } return false; }
 
+/* ============ 3 TEGEN 3 ============ */
+function freshTeam(){ return {v:0, fen:new Chess().fen(), moves:[], teams:{w:[],b:[]}, idx:{w:0,b:0}, last:null}; }
+function nameOf(p){ return p ? (p.name||"Speler") + (p.id===me?" (jij)":"") : ""; }
 function whoseTurn(s, game){
   const color = game.turn(); const team = s.teams[color] || [];
   if(!team.length) return {color, player:null, next:null};
@@ -174,24 +363,53 @@ function whoseTurn(s, game){
   return {color, player:team[i], next:team.length>1 ? team[(i+1)%team.length] : null};
 }
 function myColor(s){ if(s.teams.w.some(p=>p.id===me)) return "w"; if(s.teams.b.some(p=>p.id===me)) return "b"; return null; }
+function freshMySug(){ const s=cur(); if(mySug.fen!==s.fen) mySug = {fen:s.fen, from:null, to:null, san:null, approves:[]}; }
+function publishMine(){
+  if(!client || !connected) return;
+  const s = cur(); freshMySug();
+  client.publish(SUGG+me, JSON.stringify({id:me, name:myName(), color:myColor(s), fen:s.fen, from:mySug.from, to:mySug.to, san:mySug.san, approves:mySug.approves}), {qos:1, retain:true});
+}
+function clearMine(){ if(client && connected) client.publish(SUGG+me, "", {qos:1, retain:true}); mySug = {fen:null, from:null, to:null, san:null, approves:[]}; }
+function teamSuggestions(s, color){
+  const team = s.teams[color] || []; const ids = team.map(p=>p.id); const msgs = {};
+  freshMySug();
+  for(const id of ids){
+    const m = id===me ? {color:myColor(s), fen:s.fen, from:mySug.from, to:mySug.to, san:mySug.san, approves:mySug.approves} : sugg[id];
+    if(m && m.fen===s.fen && m.color===color) msgs[id] = m;
+  }
+  const list = [];
+  ids.forEach((id, idx)=>{
+    const m = msgs[id]; if(!m || !m.from || !m.to) return;
+    let n = 1; for(const o of ids){ if(o!==id && msgs[o] && Array.isArray(msgs[o].approves) && msgs[o].approves.includes(id)) n++; }
+    list.push({id, idx, name:(team.find(p=>p.id===id)||{}).name || m.name || "Speler", from:String(m.from), to:String(m.to), san:String(m.san||(m.from+"–"+m.to)), n, total:ids.length});
+  });
+  return list;
+}
 
-function render(){
+function renderTeam(){
   const s = cur(); const game = new Chess(s.fen); const t = whoseTurn(s, game);
-  const mine = myColor(s);
-  const myTurn = connected && t.player && t.player.id===me && !game.game_over();
+  const mine = myColor(s); const over = game.game_over();
+  const myTeamToMove = connected && !over && !!t.player && mine===t.color;
+  const isPlayer = myTeamToMove && t.player.id===me;
+  const teamSize = mine ? (s.teams[mine]||[]).length : 0;
+  if(!isPlayer || teamSize<2) suggestMode = false;
 
   $("statusDot").className = "dot "+t.color;
-  $("status").classList.toggle("me", !!myTurn);
+  $("status").classList.toggle("me", !!isPlayer);
   let main, sub;
   if(game.in_checkmate()){ main = "Schaakmat. "+NAMES[t.color==="w"?"b":"w"]+" wint!"; sub = "Druk op Nieuw spel om opnieuw te beginnen."; }
   else if(game.in_draw()){ main = "Remise."; sub = game.in_stalemate()?"Pat: geen legale zetten meer.":"Geen winnaar dit keer."; }
   else if(!t.player){ main = NAMES[t.color]+" is aan zet"; sub = "Nog niemand in team "+NAMES[t.color]+". Vul je naam in en kies een team."; }
-  else if(myTurn){ main = "Jij bent aan zet"+(game.in_check()?" — schaak!":""); sub = "Tik op een stuk en daarna op het veld waar het heen moet."; }
+  else if(isPlayer && !suggestMode){ main = "Jij bent aan zet"+(game.in_check()?" — schaak!":""); sub = "Tik op een stuk en daarna op het veld waar het heen moet."; }
+  else if(isPlayer){ main = "Jij bent aan zet — voorstelmodus"+(game.in_check()?" (schaak!)":""); sub = "Je zet wordt eerst een voorstel. Speel hem zodra je team akkoord is."; }
+  else if(myTeamToMove){ main = nameOf(t.player)+" is aan zet"+(game.in_check()?" — schaak!":""); sub = "Tik een stuk en een veld aan om een zet voor te stellen aan je team."; }
   else { main = nameOf(t.player)+" is aan zet ("+NAMES[t.color]+")"+(game.in_check()?" — schaak!":""); sub = t.next ? "Daarna in dit team: "+nameOf(t.next) : "Wacht op je beurt."; }
   $("statusMain").textContent = main; $("statusSub").textContent = sub;
 
   const flip = mine==="b"; const files = "abcdefgh";
   const targets = {}; if(selected) game.moves({square:selected, verbose:true}).forEach(m=>targets[m.to]=m);
+  let kingSq = null;
+  if(game.in_check()){ for(const f of files) for(let rk=1;rk<=8;rk++){ const p=game.get(f+rk); if(p && p.type==="k" && p.color===t.color) kingSq=f+rk; } }
   const board = $("board"); board.innerHTML="";
   for(let r=0;r<8;r++) for(let c=0;c<8;c++){
     const rank = flip ? r+1 : 8-r, file = flip ? files[7-c] : files[c], sq = file+rank;
@@ -201,28 +419,46 @@ function render(){
     el.setAttribute("aria-label", sq+(piece?" "+(piece.color==="w"?"wit ":"zwart ")+piece.type:""));
     if(s.last && (s.last.from===sq || s.last.to===sq)) el.classList.add("last");
     if(selected===sq) el.classList.add("sel");
+    if(kingSq===sq) el.classList.add("chk");
     if(targets[sq]){ el.classList.add("tgt","can"); if(piece) el.classList.add("cap"); }
-    if(myTurn && piece && piece.color===t.color) el.classList.add("can");
+    if(myTeamToMove && piece && piece.color===t.color) el.classList.add("can");
     if(piece){ const p=document.createElement("span"); p.className="pc "+piece.color; p.textContent=GLYPH[piece.type]; el.appendChild(p); }
     if(c===0){ const k=document.createElement("span"); k.className="coord r"; k.textContent=rank; el.appendChild(k); }
     if(r===7){ const k=document.createElement("span"); k.className="coord f"; k.textContent=file; el.appendChild(k); }
-    el.addEventListener("click", ()=>onSquare(sq));
+    el.addEventListener("click", ()=>onSquareTeam(sq));
     board.appendChild(el);
   }
 
+  const list = (mine && mine===t.color && !over) ? teamSuggestions(s, t.color) : [];
+  const okSq = n => /^[a-h][1-8]$/.test(n);
+  const shown = list.filter(g=>okSq(g.from) && okSq(g.to));
+  if(shown.length){
+    const disp = n => { const f=files.indexOf(n[0]), rk=+n[1]; return flip ? {x:7-f+.5, y:rk-1+.5} : {x:f+.5, y:8-rk+.5}; };
+    let svg = '<svg class="arrows" viewBox="0 0 8 8" aria-hidden="true">';
+    for(const g of shown){
+      const a=disp(g.from), b=disp(g.to); const dx=b.x-a.x, dy=b.y-a.y, L=Math.hypot(dx,dy)||1, ux=dx/L, uy=dy/L;
+      const tip={x:b.x-ux*.12, y:b.y-uy*.12}, base={x:tip.x-ux*.36, y:tip.y-uy*.36}, px=-uy*.2, py=ux*.2;
+      const col = SUGC[g.idx%3];
+      svg += '<line x1="'+(a.x+ux*.15).toFixed(3)+'" y1="'+(a.y+uy*.15).toFixed(3)+'" x2="'+base.x.toFixed(3)+'" y2="'+base.y.toFixed(3)+'" stroke="'+col+'" stroke-width=".15" stroke-linecap="round" opacity=".85"/>';
+      svg += '<polygon points="'+tip.x.toFixed(3)+','+tip.y.toFixed(3)+' '+(base.x+px).toFixed(3)+','+(base.y+py).toFixed(3)+' '+(base.x-px).toFixed(3)+','+(base.y-py).toFixed(3)+'" fill="'+col+'" opacity=".9"/>';
+    }
+    board.insertAdjacentHTML("beforeend", svg+"</svg>");
+  }
+  renderSuggPanel(s, t, mine, over, shown, isPlayer, teamSize);
+
   for(const col of ["w","b"]){
-    const list = $("list-"+col); list.innerHTML=""; const team = s.teams[col];
+    const ol = $("list-"+col); ol.innerHTML=""; const team = s.teams[col];
     for(let i=0;i<3;i++){
       const li=document.createElement("li");
       const n=document.createElement("span"); n.className="num"; n.textContent=i+1; li.appendChild(n);
       if(team[i]){
         const nm=document.createElement("span"); nm.textContent=nameOf(team[i]); li.appendChild(nm);
         if(i===(s.idx[col]||0)%team.length){
-          if(col===t.color && !game.game_over()) li.classList.add("now");
+          if(col===t.color && !over) li.classList.add("now");
           const tag=document.createElement("span"); tag.className="tag"; tag.textContent = col===t.color ? "aan zet" : "volgende"; li.appendChild(tag);
         }
       } else { li.classList.add("empty"); li.appendChild(document.createTextNode("vrije plek")); }
-      list.appendChild(li);
+      ol.appendChild(li);
     }
     $("team-"+col).classList.toggle("active", col===t.color);
     const btn=$("join-"+col);
@@ -233,7 +469,7 @@ function render(){
 
   const mv=$("moves"); mv.innerHTML="";
   $("moveCount").textContent = s.moves.length+(s.moves.length===1?" zet":" zetten");
-  if(!s.moves.length){ const e=document.createElement("span"); e.style.cssText="grid-column:1/4;color:var(--muted);font-family:var(--f-body)"; e.textContent="Nog geen zetten. Wit begint."; mv.appendChild(e); }
+  if(!s.moves.length){ const e=document.createElement("span"); e.style.cssText="grid-column:1/-1;color:var(--muted);font-family:var(--f-body)"; e.textContent="Nog geen zetten. Wit begint."; mv.appendChild(e); }
   for(let i=0;i<s.moves.length;i+=2){
     const n=document.createElement("span"); n.className="n"; n.textContent=(i/2+1)+"."; mv.appendChild(n);
     for(const m of [s.moves[i], s.moves[i+1]]){
@@ -245,88 +481,274 @@ function render(){
   mv.scrollTop = mv.scrollHeight;
 }
 
-function save(next){
-  if(!client || !connected){ toast("Geen verbinding. Wacht even of herlaad de pagina."); return; }
-  next.v = (cur().v||0) + 1;
-  state = next; render();
-  client.publish(TOPIC, JSON.stringify(next), {qos:1, retain:true}, err=>{ if(err) toast("Versturen lukte niet. Probeer het opnieuw."); else toast(""); });
+function renderSuggPanel(s, t, mine, over, list, isPlayer, teamSize){
+  const panel = $("p-sugg");
+  panel.hidden = !mine || over;
+  if(panel.hidden) return;
+  const modeBtn = $("suggMode");
+  modeBtn.hidden = !(isPlayer && teamSize>1);
+  modeBtn.setAttribute("aria-pressed", suggestMode ? "true" : "false");
+  modeBtn.textContent = suggestMode ? "Voorstelmodus aan" : "Zet voorstellen";
+  const hint = $("suggHint");
+  if(mine!==t.color) hint.textContent = "Voorstellen doen kan zodra jouw team aan zet is.";
+  else if(teamSize<2) hint.textContent = "Voorstellen werkt als er meer mensen in je team zitten.";
+  else if(isPlayer) hint.textContent = suggestMode ? "Tik een stuk en een veld aan: je zet wordt een voorstel. Speel hem hieronder zodra je team akkoord is." : "Je teamgenoten zien jouw voorstellen en kunnen akkoord geven. Je kunt elk voorstel hieronder direct spelen.";
+  else hint.textContent = "Tik een stuk en een veld aan om een zet voor te stellen. Alleen jouw team ziet dit.";
+  const box = $("suggList"); box.innerHTML = "";
+  if(mine===t.color && !list.length && teamSize>1){ const p=document.createElement("p"); p.className="note"; p.textContent="Nog geen voorstellen voor deze zet."; box.appendChild(p); }
+  freshMySug();
+  for(const g of list){
+    const item=document.createElement("div"); item.className="sugg-item";
+    const sw=document.createElement("span"); sw.className="sw"; sw.style.background=SUGC[g.idx%3]; item.appendChild(sw);
+    const txt=document.createElement("div"); txt.className="txt";
+    const mvx=document.createElement("span"); mvx.className="mv"; mvx.textContent=g.san+"  ("+g.from+"–"+g.to+")"; txt.appendChild(mvx);
+    const who=document.createElement("small"); who.textContent = g.id===me ? "Jouw voorstel" : "Voorstel van "+g.name; txt.appendChild(who);
+    item.appendChild(txt);
+    const chip=document.createElement("span"); chip.className="chip"+(g.n>=g.total?" full":""); chip.textContent=g.n+"/"+g.total+" akkoord"; item.appendChild(chip);
+    if(g.id!==me){
+      const ok=document.createElement("button"); ok.type="button"; ok.className="btn sm";
+      const on = mySug.approves.includes(g.id);
+      ok.setAttribute("aria-pressed", on?"true":"false"); ok.textContent = on ? "✓ Akkoord" : "Akkoord";
+      ok.addEventListener("click", ()=>toggleApprove(g.id)); item.appendChild(ok);
+    } else {
+      const del=document.createElement("button"); del.type="button"; del.className="btn sm"; del.textContent="Intrekken";
+      del.addEventListener("click", ()=>{ mySug.from=null; mySug.to=null; mySug.san=null; publishMine(); render(); }); item.appendChild(del);
+    }
+    if(isPlayer){
+      const play=document.createElement("button"); play.type="button"; play.className="btn sm primary"; play.textContent="Speel";
+      play.addEventListener("click", ()=>playTeam(g.from, g.to)); item.appendChild(play);
+    }
+    box.appendChild(item);
+  }
 }
-
-function onSquare(sq){
-  const s = cur(); const game = new Chess(s.fen); const t = whoseTurn(s, game);
-  if(!connected || !t.player || t.player.id!==me || game.game_over()){ if(selected){selected=null; render();} return; }
+function toggleApprove(id){
+  freshMySug();
+  const i = mySug.approves.indexOf(id);
+  if(i>=0) mySug.approves.splice(i,1); else mySug.approves.push(id);
+  publishMine(); render();
+}
+function onSquareTeam(sq){
+  const s = cur(); const game = new Chess(s.fen); const t = whoseTurn(s, game); const mine = myColor(s);
+  if(!connected || !t.player || mine!==t.color || game.game_over()){ if(selected){selected=null; render();} return; }
+  const isPlayer = t.player.id===me; const suggesting = !isPlayer || suggestMode;
   const piece = game.get(sq);
   if(selected){
     const ok = game.moves({square:selected, verbose:true}).some(x=>x.to===sq);
     if(ok){
-      const res = game.move({from:selected, to:sq, promotion:"q"}); selected=null;
-      const next = clone(s);
-      next.fen = game.fen();
-      next.moves.push({san:res.san, id:me, name:t.player.name, color:t.color});
-      next.idx[t.color] = ((s.idx[t.color]||0)+1) % Math.max(1, s.teams[t.color].length);
-      next.last = {from:res.from, to:res.to};
-      save(next); return;
+      const from = selected; selected = null;
+      if(suggesting){
+        const res = game.move({from, to:sq, promotion:"q"});
+        freshMySug(); mySug.from=from; mySug.to=sq; mySug.san=res.san;
+        publishMine(); render();
+      } else playTeam(from, sq);
+      return;
     }
   }
   selected = (piece && piece.color===t.color && sq!==selected) ? sq : null;
   render();
 }
-
+function playTeam(from, to){
+  const s = cur(); const game = new Chess(s.fen); const t = whoseTurn(s, game);
+  if(!connected || !t.player || t.player.id!==me || game.game_over()) return;
+  const res = game.move({from, to, promotion:"q"});
+  if(!res){ toast("Die zet kan niet (meer)."); return; }
+  const next = clone(s);
+  next.fen = game.fen();
+  next.moves.push({san:res.san, id:me, name:t.player.name, color:t.color});
+  next.idx[t.color] = ((s.idx[t.color]||0)+1) % Math.max(1, s.teams[t.color].length);
+  next.last = {from:res.from, to:res.to};
+  suggestMode = false;
+  save(next);
+}
 function fixIdx(s){ for(const c of ["w","b"]) s.idx[c] = s.teams[c].length ? (s.idx[c]||0) % s.teams[c].length : 0; }
-function join(col){
-  const name = $("name").value.trim();
-  if(!name){ toast("Vul eerst je naam in."); $("name").focus(); return; }
+function joinTeam(col){
+  if(needName()) return;
   const s = clone(cur());
   if(s.teams[col].length>=3 && !s.teams[col].some(p=>p.id===me)) return;
   for(const c of ["w","b"]) s.teams[c] = s.teams[c].filter(p=>p.id!==me);
-  s.teams[col].push({id:me, name}); fixIdx(s); selected=null; save(s);
+  s.teams[col].push({id:me, name:myName()}); fixIdx(s); clearMine(); save(s);
 }
-function leave(){ const s = clone(cur()); for(const c of ["w","b"]) s.teams[c]=s.teams[c].filter(p=>p.id!==me); fixIdx(s); save(s); }
+function leaveTeam(){ const s = clone(cur()); for(const c of ["w","b"]) s.teams[c]=s.teams[c].filter(p=>p.id!==me); fixIdx(s); clearMine(); save(s); }
 
-$("join-w").addEventListener("click",()=>join("w"));
-$("join-b").addEventListener("click",()=>join("b"));
-$("leave").addEventListener("click",leave);
+/* ============ 4 SPELERS ============ */
+function viewMap(view, dr, dc){
+  if(view==="y") return [13-dr, 13-dc];
+  if(view==="b") return [dc, 13-dr];
+  if(view==="g") return [13-dc, dr];
+  return [dr, dc];
+}
+function mySeat4(s){ return COLS.find(c=>s.seats[c] && s.seats[c].id===me) || null; }
+let cache4 = {key:null, moves:[]};
+function render4(){
+  const s = cur(); const seat = mySeat4(s); const turnCol = COLS[s.turn];
+  const myTurn = connected && s.started && !s.winner && seat===turnCol && s.alive[seat];
+  const key = s.v+":"+turnCol;
+  if(myTurn && cache4.key!==key) cache4 = {key, moves:legalMoves(s.board, turnCol)};
+  const moves = myTurn ? cache4.moves : [];
+  const movable = new Set(moves.map(m=>m.from));
+  const targets = new Set(selected!=null ? moves.filter(m=>m.from===selected).map(m=>m.to) : []);
+  const checked = new Set(); if(s.started) for(const c of COLS) if(s.alive[c] && inCheck(s.board,c)){ const k=s.board.indexOf(c+"K"); if(k>=0) checked.add(k); }
+
+  const dot = $("statusDot");
+  let main, sub;
+  if(s.winner){ dot.className="dot"+(s.winner!=="none"?" c-"+s.winner:""); main = s.winner==="none" ? "Iedereen ligt eruit." : CNAME[s.winner]+" wint!"+(s.seats[s.winner]?" ("+s.seats[s.winner].name+")":""); sub = "Druk op Nieuw spel om opnieuw te beginnen."; }
+  else if(!s.started){ dot.className="dot c-r"; const n=COLS.filter(c=>s.seats[c]).length; main = n+" van 4 plekken bezet"; sub = n<2 ? "Vul je naam in en kies een kleur. Je hebt minstens 2 spelers nodig." : "Druk op Start spel als iedereen er is. Lege kleuren doen niet mee."; }
+  else { dot.className="dot c-"+turnCol; const pl=s.seats[turnCol];
+    if(myTurn){ main = "Jij bent aan zet ("+CNAME[turnCol]+")"+(checked.has(s.board.indexOf(turnCol+"K"))?" — schaak!":""); sub = "Tik op een stuk en daarna op het veld waar het heen moet."; }
+    else { main = (pl?pl.name:CNAME[turnCol])+" is aan zet ("+CNAME[turnCol]+")"; sub = "Volgorde: Rood → Blauw → Geel → Groen."; } }
+  $("statusMain").textContent = main; $("statusSub").textContent = sub;
+  $("status").classList.toggle("me", !!myTurn);
+
+  const view = seat || "r";
+  const board = $("board"); board.innerHTML = "";
+  for(let dr=0; dr<14; dr++) for(let dc=0; dc<14; dc++){
+    const [r,c] = viewMap(view, dr, dc); const i = r*14+c;
+    if(!onBoard(r,c)){ const v=document.createElement("div"); v.className="sq void"; board.appendChild(v); continue; }
+    const p = s.board[i];
+    const el = document.createElement("button"); el.type="button";
+    el.className = "sq"+(((r+c)%2)?" d":"");
+    el.setAttribute("aria-label", sqName4(i)+(p?" "+CNAME[p[0]]+" "+p[1]:""));
+    if(s.last && (s.last.from===i || s.last.to===i)) el.classList.add("last");
+    if(selected===i) el.classList.add("sel");
+    if(checked.has(i)) el.classList.add("chk");
+    if(targets.has(i)){ el.classList.add("tgt","can"); if(p) el.classList.add("cap"); }
+    if(movable.has(i)) el.classList.add("can");
+    if(p && GLY4[p[1]] && CNAME[p[0]]){ const sp=document.createElement("span"); sp.className="pc c-"+p[0]; sp.textContent=GLY4[p[1]]; el.appendChild(sp); }
+    el.addEventListener("click", ()=>onSquare4(i));
+    board.appendChild(el);
+  }
+
+  const box = $("seats"); box.innerHTML = "";
+  for(const c of COLS){
+    const row=document.createElement("div"); row.className="seat";
+    if(s.started && !s.winner && turnCol===c && s.alive[c]) row.classList.add("now");
+    if(s.started && !s.alive[c]) row.classList.add("out");
+    const d=document.createElement("span"); d.className="dot c-"+c; row.appendChild(d);
+    const who=document.createElement("div"); who.className="who";
+    const b=document.createElement("b"); b.textContent=CNAME[c]; who.appendChild(b);
+    if(s.seats[c]) who.appendChild(document.createTextNode(" · "+s.seats[c].name+(s.seats[c].id===me?" (jij)":"")));
+    else { who.classList.add("empty"); who.appendChild(document.createTextNode(s.started?" · doet niet mee":" · vrij")); }
+    row.appendChild(who);
+    let tagText = null;
+    if(s.winner===c) tagText="wint"; else if(s.started && !s.alive[c] && s.seats[c]) tagText="eruit"; else if(s.started && !s.winner && turnCol===c) tagText="aan zet";
+    if(tagText){ const tg=document.createElement("span"); tg.className="tag"; tg.textContent=tagText; row.appendChild(tg); }
+    if(!s.started && !s.seats[c]){ const bt=document.createElement("button"); bt.type="button"; bt.className="btn sm"; bt.textContent="Kies"; bt.disabled=!connected; bt.addEventListener("click",()=>join4(c)); row.appendChild(bt); }
+    box.appendChild(row);
+  }
+  const nSeated = COLS.filter(c=>s.seats[c]).length;
+  $("start4").hidden = s.started; $("start4").disabled = !connected || nSeated<2 || !seat;
+  $("leave4").hidden = s.started || !seat;
+  const canResign = s.started && !s.winner && seat && s.alive[seat];
+  if(!canResign){ $("resign").hidden=true; $("resignYes").hidden=true; $("resignNo").hidden=true; }
+  else if($("resignYes").hidden) $("resign").hidden=false;
+
+  const mv=$("moves"); mv.innerHTML="";
+  const real = s.moves.filter(m=>!m.sys).length;
+  $("moveCount").textContent = real+(real===1?" zet":" zetten");
+  if(!s.moves.length){ const e=document.createElement("span"); e.style.cssText="grid-column:1/-1;color:var(--muted);font-family:var(--f-body)"; e.textContent="Nog geen zetten. Rood begint."; mv.appendChild(e); }
+  let n=0;
+  for(const m of s.moves){
+    const a=document.createElement("span"); a.className="n"; if(!m.sys){ n++; a.textContent=n+"."; } mv.appendChild(a);
+    const b=document.createElement("span");
+    if(m.sys){ b.className="sys"; b.textContent=m.t; }
+    else { const d=document.createElement("span"); d.className="dot sm"+(CNAME[m.col]?" c-"+m.col:""); d.style.cssText="display:inline-block;vertical-align:-1px;margin-right:6px"; b.appendChild(d); b.appendChild(document.createTextNode(m.t+" ")); const sm=document.createElement("small"); sm.textContent=m.name||""; b.appendChild(sm); }
+    mv.appendChild(b);
+  }
+  mv.scrollTop = mv.scrollHeight;
+}
+function onSquare4(i){
+  const s = cur(); const seat = mySeat4(s); const turnCol = COLS[s.turn];
+  if(!connected || !s.started || s.winner || seat!==turnCol){ if(selected!=null){ selected=null; render(); } return; }
+  const moves = cache4.key===(s.v+":"+turnCol) ? cache4.moves : legalMoves(s.board, turnCol);
+  if(selected!=null && moves.some(m=>m.from===selected && m.to===i)){
+    const next = clone(s); move4(next, selected, i, s.seats[seat].name); save(next); return;
+  }
+  selected = (s.board[i] && s.board[i][0]===seat && i!==selected) ? i : null;
+  render();
+}
+function join4(c){
+  if(needName()) return;
+  const s = clone(cur()); if(s.started || s.seats[c]) return;
+  for(const k of COLS) if(s.seats[k] && s.seats[k].id===me) s.seats[k]=null;
+  s.seats[c] = {id:me, name:myName()}; save(s);
+}
+$("start4").addEventListener("click", ()=>{ const s=clone(cur()); if(s.started) return; if(COLS.filter(c=>s.seats[c]).length<2){ toast("Je hebt minstens 2 spelers nodig."); return; } startGame4(s); save(s); });
+$("leave4").addEventListener("click", ()=>{ const s=clone(cur()); if(s.started) return; for(const k of COLS) if(s.seats[k] && s.seats[k].id===me) s.seats[k]=null; save(s); });
+$("resign").addEventListener("click", ()=>{ $("resign").hidden=true; $("resignYes").hidden=false; $("resignNo").hidden=false; });
+$("resignNo").addEventListener("click", ()=>{ $("resign").hidden=false; $("resignYes").hidden=true; $("resignNo").hidden=true; });
+$("resignYes").addEventListener("click", ()=>{
+  $("resignYes").hidden=true; $("resignNo").hidden=true;
+  const s = clone(cur()); const seat = mySeat4(s); if(!seat || !s.alive[seat] || s.winner) return;
+  eliminate(s, seat, "opgegeven");
+  if(COLS[s.turn]===seat) advance(s); else checkWinner(s);
+  save(s);
+});
+
+/* ============ GEDEELD ============ */
+$("join-w").addEventListener("click",()=>joinTeam("w"));
+$("join-b").addEventListener("click",()=>joinTeam("b"));
+$("leave").addEventListener("click",leaveTeam);
+$("suggMode").addEventListener("click",()=>{ suggestMode=!suggestMode; selected=null; render(); });
 let resetMode = null;
-function showConfirm(mode){ resetMode=mode; $("reset").hidden=!!mode; $("kick").hidden=!!mode; $("resetYes").hidden=!mode; $("resetNo").hidden=!mode;
-  $("resetYes").textContent = mode==="teams" ? "Ja, teams leegmaken" : "Ja, bord resetten"; if(!mode) $("kick").hidden=false; }
+function showConfirm(mode){
+  resetMode = mode;
+  $("reset").hidden = !!mode; $("kick").hidden = !!mode; $("resetYes").hidden = !mode; $("resetNo").hidden = !mode;
+  $("resetYes").textContent = mode==="seats" ? (MODE==="team" ? "Ja, teams leegmaken" : "Ja, plekken leegmaken") : "Ja, bord resetten";
+}
 $("reset").addEventListener("click",()=>showConfirm("board"));
-$("kick").addEventListener("click",()=>showConfirm("teams"));
-$("kick").hidden=false;
+$("kick").addEventListener("click",()=>showConfirm("seats"));
 $("resetNo").addEventListener("click",()=>showConfirm(null));
 $("resetYes").addEventListener("click",()=>{
-  const s = cur(); const n = fresh();
-  if(resetMode==="board"){ n.teams = clone(s.teams); }
-  showConfirm(null); selected=null; save(n);
+  const s = cur();
+  let n;
+  if(MODE==="team"){ n = freshTeam(); if(resetMode==="board") n.teams = clone(s.teams); clearMine(); }
+  else { n = fresh4(); if(resetMode==="board") n.seats = clone(s.seats); }
+  showConfirm(null); save(n);
 });
 
 function drawQR(){
   const box=$("qr"); const url = location.href.split("#")[0];
   try{ const q=qrcode(0,"M"); q.addData(url); q.make(); box.innerHTML=q.createSvgTag({cellSize:4, margin:0, scalable:true}); }catch(e){ box.hidden=true; }
 }
-
 function setConn(ok, text){ const c=$("conn"); c.className="conn "+(ok?"ok":"bad"); c.textContent=text; }
+function validState(s){
+  if(!s) return false;
+  if(MODE==="team") return !!(s.fen && s.teams && Array.isArray(s.teams.w) && Array.isArray(s.teams.b));
+  return Array.isArray(s.board) && s.board.length===196 && !!s.seats && !!s.alive;
+}
 function connect(i){
   const url = BROKERS[i % BROKERS.length];
-  let gotAny = false;
   const cl = mqtt.connect(url, {clientId:"ts_"+me+"_"+Math.random().toString(36).slice(2,6), reconnectPeriod:3000, connectTimeout:8000, clean:true});
   client = cl;
   const failover = setTimeout(()=>{ if(!connected){ cl.end(true); connect(i+1); } }, 9000);
   cl.on("connect", ()=>{
     clearTimeout(failover);
-    cl.subscribe(TOPIC, {qos:1}, ()=>{
-      connected = true; setConn(true, "Verbonden"); render();
-      setTimeout(()=>{ if(!gotAny && !state){ $("statusMain").textContent="Nieuw spel"; render(); } }, 1500);
-    });
+    const topics = MODE==="team" ? [TOPIC, SUGG+"+"] : [TOPIC];
+    cl.subscribe(topics, {qos:1}, ()=>{ connected = true; setConn(true, "Verbonden"); render(); });
   });
   cl.on("message", (topic, payload)=>{
-    gotAny = true;
+    const txt = payload.toString();
+    if(topic.startsWith(SUGG)){
+      const id = topic.slice(SUGG.length);
+      if(id===me) return;
+      if(!txt){ delete sugg[id]; render(); return; }
+      try{ const m = JSON.parse(txt); if(m && typeof m==="object"){ sugg[id] = m; render(); } }catch(e){}
+      return;
+    }
+    if(topic!==TOPIC || !txt) return;
     try{
-      const s = JSON.parse(payload.toString());
-      if(!s || !s.fen || !s.teams) return;
+      const s = JSON.parse(txt);
+      if(!validState(s)) return;
       if(state && (s.v||0) < (state.v||0)) return;
-      s.idx = s.idx||{w:0,b:0}; s.moves = s.moves||[];
+      if(MODE==="team"){ s.idx = s.idx||{w:0,b:0}; s.moves = s.moves||[]; }
+      else { s.moves = s.moves||[]; }
+      const fenChanged = MODE==="team" && (!state || state.fen!==s.fen);
       state = s;
-      if(selected){ const g=new Chess(s.fen); const p=g.get(selected); if(!p || p.color!==g.turn()) selected=null; }
+      if(fenChanged) suggestMode = false;
+      if(selected!=null){
+        if(MODE==="team"){ const g=new Chess(s.fen); const p=g.get(selected); if(!p || p.color!==g.turn()) selected=null; }
+        else { const p=s.board[selected]; if(!p || p[0]!==COLS[s.turn]) selected=null; }
+      }
       render();
     }catch(e){}
   });
@@ -338,5 +760,4 @@ drawQR(); render();
 if(typeof mqtt==="undefined"){ setConn(false,"Kon niet laden"); toast("De pagina kon niet volledig laden. Herlaad de pagina."); }
 else connect(0);
 </script>
-
 </body></html>
