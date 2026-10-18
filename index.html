@@ -135,7 +135,17 @@ button.btn:disabled{opacity:.45;cursor:not-allowed}
 button.btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 button.btn.danger{color:var(--warn);border-color:var(--warn)}
 .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
-.seg{display:flex;gap:4px}
+.seg{display:flex;gap:4px;flex-wrap:wrap}
+.boticon{width:1.05em;height:1.05em;vertical-align:-.15em;flex:none}
+.tabs a .boticon{margin-right:5px}
+.botbadge{display:inline-flex;align-items:center;gap:2px;margin-left:6px;padding:0 5px;border-radius:99px;border:1px solid var(--accent);color:var(--accent);font:600 11px/16px var(--f-body);vertical-align:1px}
+.botbadge .boticon{width:12px;height:12px}
+.thinking{display:inline-flex;align-items:center;gap:6px;color:var(--muted);font-size:13px}
+.thinking::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--accent);animation:pulse 1s ease-in-out infinite}
+@keyframes pulse{50%{opacity:.25}}
+@media (prefers-reduced-motion:reduce){.thinking::before{animation:none}}
+.botopts{display:grid;gap:10px}
+.botopts .row label{min-width:5.5em}
 
 .moves{font:400 13px/1.6 var(--f-mono);max-height:220px;overflow:auto;display:grid;grid-template-columns:2.4em 1fr 1fr;gap:0 8px;font-variant-numeric:tabular-nums}
 .moves.one{grid-template-columns:2.4em 1fr}
@@ -170,7 +180,7 @@ table.rank tr.me td{background:color-mix(in srgb,var(--accent) 12%,transparent)}
       <p class="sub" id="sub">Twee teams van drie. Binnen je team doe je om de beurt een zet.</p>
     </div>
     <div class="headright">
-      <nav class="tabs" aria-label="Spelvorm"><a data-mode="duel" href="?mode=duel">1 tegen 1</a><a data-mode="team" href="?">3 tegen 3</a><a data-mode="vier" href="?mode=vier">4 spelers</a></nav>
+      <nav class="tabs" aria-label="Spelvorm"><a data-mode="duel" href="?mode=duel">1 tegen 1</a><a data-mode="team" href="?">3 tegen 3</a><a data-mode="vier" href="?mode=vier">4 spelers</a><a data-mode="bot" href="?mode=bot"><svg class="boticon" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.5v2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="8" cy="1.5" r="1" fill="currentColor"/><rect x="2.5" y="4" width="11" height="9" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="6" cy="8" r="1.2" fill="currentColor"/><circle cx="10" cy="8" r="1.2" fill="currentColor"/><path d="M6 10.8h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M1 7.5v3M15 7.5v3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Tegen bot</a></nav>
       <span class="conn" id="conn">Verbinden…</span>
     </div>
   </header>
@@ -223,6 +233,25 @@ table.rank tr.me td{background:color-mix(in srgb,var(--accent) 12%,transparent)}
           <button class="btn" id="resignNo" type="button" hidden>Annuleren</button>
         </div>
       </div>
+      <div id="p-bot" hidden>
+        <div class="row" style="justify-content:space-between;margin-bottom:12px"><h2>Tegen de computer</h2><span class="label">1 tegen bot</span></div>
+        <div class="botopts" id="botSetup">
+          <div class="row"><label class="label" for="botLevel">Niveau</label>
+            <select class="inp" id="botLevel"><option value="1">Makkelijk</option><option value="2" selected>Gemiddeld</option><option value="3">Moeilijk</option></select></div>
+          <div class="row"><label class="label" for="botColor">Jouw kleur</label>
+            <select class="inp" id="botColor"><option value="w">Wit</option><option value="b">Zwart</option><option value="r">Willekeurig</option></select></div>
+          <div class="row"><button class="btn primary" id="botStart" type="button">Start potje</button></div>
+          <p class="note" id="botNote"></p>
+        </div>
+        <div id="botPlaying" hidden style="display:grid;gap:10px">
+          <div class="who-am-i"><div><span class="label">Tegenstander</span><br><b id="botWho"></b></div><span id="botThink" class="thinking" hidden>Bot denkt na…</span></div>
+          <div class="row">
+            <button class="btn danger" id="botResign" type="button">Opgeven</button>
+            <button class="btn danger" id="botResignYes" type="button" hidden>Ja, opgeven</button>
+            <button class="btn" id="botResignNo" type="button" hidden>Annuleren</button>
+          </div>
+        </div>
+      </div>
       <div class="row" id="tcRow">
         <label class="label" for="tc">Bedenktijd</label>
         <select class="inp" id="tc">
@@ -258,7 +287,7 @@ table.rank tr.me td{background:color-mix(in srgb,var(--accent) 12%,transparent)}
 
     <section class="panel" id="p-rank">
       <div class="row" style="justify-content:space-between"><h2>Ranglijst</h2>
-        <div class="seg" id="rankTabs"><button class="btn sm" type="button" data-m="duel">1v1</button><button class="btn sm" type="button" data-m="team">3v3</button><button class="btn sm" type="button" data-m="vier">4 spelers</button></div>
+        <div class="seg" id="rankTabs"><button class="btn sm" type="button" data-m="duel">1v1</button><button class="btn sm" type="button" data-m="team">3v3</button><button class="btn sm" type="button" data-m="vier">4 spelers</button><button class="btn sm" type="button" data-m="bot"><svg class="boticon" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.5v2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="8" cy="1.5" r="1" fill="currentColor"/><rect x="2.5" y="4" width="11" height="9" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="6" cy="8" r="1.2" fill="currentColor"/><circle cx="10" cy="8" r="1.2" fill="currentColor"/><path d="M6 10.8h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M1 7.5v3M15 7.5v3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg> Bot</button></div>
       </div>
       <div class="tablewrap"><table class="rank"><thead id="rankHead"></thead><tbody id="rankBody"></tbody></table></div>
       <p class="note" id="rankNote"></p>
@@ -409,13 +438,13 @@ function points4(place, n){ return place===n-1 ? 0 : [4,2,1][place] || 0; }
 /*ENGINE4-END*/
 
 const params = new URLSearchParams(location.search);
-const MODE = params.get("mode")==="vier" ? "vier" : params.get("mode")==="duel" ? "duel" : "team";
-const TEAMLIKE = MODE!=="vier";
+const MODE = ["vier","duel","bot"].includes(params.get("mode")) ? params.get("mode") : "team";
+const TEAMLIKE = MODE==="team" || MODE==="duel";
 const MAXT = MODE==="duel" ? 1 : 3;
 const ROOM = ((params.get("room") || "delft-827a79aa").replace(/[^a-zA-Z0-9_-]/g,"").slice(0,40)) || "delft-827a79aa";
 const ROOT = "teamschaak/v1/";
 const BASE = ROOT + ROOM;
-const TOPIC = MODE==="team" ? BASE+"/state" : MODE==="duel" ? BASE+"/duel" : BASE+"/vier";
+const TOPIC = MODE==="team" ? BASE+"/state" : MODE==="duel" ? BASE+"/duel" : MODE==="vier" ? BASE+"/vier" : null;
 const SUGG = BASE + "/sugg/";
 const ACC = ROOT + "acct/";
 const SCORE = ROOT + "score/";
@@ -423,7 +452,8 @@ const BROKERS = ["wss://broker.emqx.io:8084/mqtt", "wss://broker.hivemq.com:8884
 const GLYPH = {k:"♚",q:"♛",r:"♜",b:"♝",n:"♞",p:"♟︎"};
 const NAMES = {w:"Wit", b:"Zwart"};
 const SUGC = ["#2E7FD9","#E07B24","#9B4FD1"];
-const MODELABEL = {duel:"1 tegen 1", team:"3 tegen 3", vier:"4 spelers"};
+const MODELABEL = {duel:"1 tegen 1", team:"3 tegen 3", vier:"4 spelers", bot:"tegen de bot"};
+const ROBOT_SVG = '<svg class="boticon" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.5v2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="8" cy="1.5" r="1" fill="currentColor"/><rect x="2.5" y="4" width="11" height="9" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="6" cy="8" r="1.2" fill="currentColor"/><circle cx="10" cy="8" r="1.2" fill="currentColor"/><path d="M6 10.8h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M1 7.5v3M15 7.5v3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>';
 const $ = id => document.getElementById(id);
 const store = { get(k){ try{return localStorage.getItem(k)}catch(e){return null} }, set(k,v){ try{ if(v==null) localStorage.removeItem(k); else localStorage.setItem(k,v);}catch(e){} } };
 
@@ -507,6 +537,10 @@ if(MODE==="duel"){
   $("sub").textContent = "Gewoon schaken, één tegen één.";
   $("teamsTitle").textContent = "Spelers"; $("teamsLabel").textContent = "1 per kleur"; $("kick").textContent = "Plekken leegmaken";
 }
+if(MODE==="bot"){
+  $("sub").textContent = "Speel één tegen één tegen de computer. Kies een niveau en een kleur.";
+  $("p-teams").hidden = true; $("p-bot").hidden = false; $("tcRow").hidden = true; $("kick").hidden = true;
+}
 if(MODE==="vier"){
   $("sub").textContent = "Vier kanten, ieder voor zich. Schaakmat, pat of tijd op betekent dat je eruit ligt; wie als laatste overblijft wint.";
   $("p-teams").hidden = true; $("p-seats").hidden = false; $("kick").textContent = "Plekken leegmaken";
@@ -529,7 +563,7 @@ function save(next){
   client.publish(TOPIC, JSON.stringify(next), {qos:1, retain:true}, err=>{ if(err) toast("Versturen lukte niet. Probeer het opnieuw."); else toast(""); });
   if(toScore) recordScores(toScore);
 }
-function render(){ renderLogin(); if(TEAMLIKE) renderTeam(); else render4(); renderClock(); renderRank(); }
+function render(){ renderLogin(); if(MODE==="bot"){ renderBot(); renderRank(); return; } if(TEAMLIKE) renderTeam(); else render4(); renderClock(); renderRank(); }
 
 /* ---------- punten ---------- */
 function teamResult(s){
@@ -552,18 +586,30 @@ function recordScores(s){
     order.forEach((c, place)=>{ const p = s.seats[c]; if(!p || !p.id || !p.id.startsWith("u:")) return;
       updates.push({user:p.id.slice(2), name:p.name, o: place===0 ? "w" : "l", pts: points4(place, order.length), place}); });
   }
+  applyScores(updates, MODE, s.gid);
+}
+function applyScores(updates, mode, gid){
   for(const u of updates){
     const doc = scores[u.user] ? clone(scores[u.user]) : {user:u.user, name:u.name, modes:{}, games:[]};
     doc.games = doc.games || []; doc.modes = doc.modes || {};
-    if(doc.games.includes(s.gid)) continue;
-    const m = doc.modes[MODE] || {p:0, w:0, d:0, l:0, pts:0};
+    if(doc.games.includes(gid)) continue;
+    const m = doc.modes[mode] || {p:0, w:0, d:0, l:0, pts:0};
     m.p++; m[u.o]++; m.pts += u.pts;
-    doc.modes[MODE] = m; doc.name = u.name || doc.name;
-    doc.games.push(s.gid); if(doc.games.length>60) doc.games = doc.games.slice(-60);
+    if(u.best) m.best = Math.max(m.best||0, u.best);
+    doc.modes[mode] = m; doc.name = u.name || doc.name;
+    doc.games.push(gid); if(doc.games.length>60) doc.games = doc.games.slice(-60);
     scores[u.user] = doc;
-    client.publish(SCORE+u.user, JSON.stringify(doc), {qos:1, retain:true});
+    if(client && connected) client.publish(SCORE+u.user, JSON.stringify(doc), {qos:1, retain:true});
   }
   renderRank();
+}
+const LEVELNAME = {1:"Makkelijk", 2:"Gemiddeld", 3:"Moeilijk"};
+function botBadge(d){
+  const b = d && d.modes && d.modes.bot && d.modes.bot.best; if(!b) return null;
+  const el = document.createElement("span"); el.className = "botbadge"; el.innerHTML = ROBOT_SVG;
+  el.appendChild(document.createTextNode(String(b)));
+  el.title = "Heeft de bot verslagen op niveau "+LEVELNAME[b]; el.setAttribute("aria-label", el.title);
+  return el;
 }
 function renderRank(){
   for(const b of document.querySelectorAll("#rankTabs button")) b.setAttribute("aria-pressed", b.dataset.m===rankMode ? "true" : "false");
@@ -572,17 +618,19 @@ function renderRank(){
   head.innerHTML = four ? "<tr><th>#</th><th>Speler</th><th>Potjes</th><th>1e plek</th><th>Punten</th></tr>"
                         : "<tr><th>#</th><th>Speler</th><th>Potjes</th><th>W</th><th>R</th><th>V</th><th>Punten</th></tr>";
   const rows = Object.values(scores).filter(d=>d && d.modes && d.modes[rankMode] && d.modes[rankMode].p>0)
-    .map(d=>({user:d.user, name:d.name||d.user, m:d.modes[rankMode]}))
+    .map(d=>({user:d.user, name:d.name||d.user, m:d.modes[rankMode], d}))
     .sort((a,b)=> (b.m.pts-a.m.pts) || (b.m.w-a.m.w) || (a.m.p-b.m.p) || a.name.localeCompare(b.name));
   body.innerHTML = "";
   if(!rows.length){ const tr=document.createElement("tr"); const td=document.createElement("td"); td.colSpan = four?5:7; td.style.textAlign="left"; td.style.color="var(--muted)"; td.textContent = "Nog geen uitgespeelde potjes in deze spelvorm."; tr.appendChild(td); body.appendChild(tr); }
   rows.forEach((r,i)=>{
     const tr=document.createElement("tr"); if(session && r.user===session.user) tr.className="me";
     const cells = four ? [i+1, r.name, r.m.p, r.m.w, r.m.pts] : [i+1, r.name, r.m.p, r.m.w, r.m.d, r.m.l, r.m.pts];
-    cells.forEach((v,j)=>{ const td=document.createElement("td"); td.textContent=v; if(j===cells.length-1) td.className="pts"; tr.appendChild(td); });
+    cells.forEach((v,j)=>{ const td=document.createElement("td"); td.textContent=v; if(j===cells.length-1) td.className="pts"; if(j===1){ const bb=botBadge(r.d); if(bb) td.appendChild(bb); } tr.appendChild(td); });
     body.appendChild(tr);
   });
-  $("rankNote").textContent = four ? "Punten: 1e plek 4 · 2e 2 · 3e 1 · laatste 0." : "Punten: winst 3 · remise 1 · verlies 0. Telt alleen voor ingelogde spelers.";
+  $("rankNote").textContent = four ? "Punten: 1e plek 4 · 2e 2 · 3e 1 · laatste 0. Het robotje met cijfer betekent: bot verslagen op dat niveau."
+    : rankMode==="bot" ? "Punten: winst op Makkelijk 1 · Gemiddeld 2 · Moeilijk 3, remise 1 (niet op Makkelijk). Het robotje met cijfer is het hoogste niveau dat je versloeg."
+    : "Punten: winst 3 · remise 1 · verlies 0. Telt alleen voor ingelogde spelers. Het robotje met cijfer betekent: bot verslagen op dat niveau.";
 }
 for(const b of document.querySelectorAll("#rankTabs button")) b.addEventListener("click", ()=>{ rankMode=b.dataset.m; renderRank(); });
 
@@ -645,6 +693,7 @@ function renderClock(){
 }
 let timeoutSentFor = null;
 function tick(){
+  if(MODE==="bot") return;
   if(!state || !state.clock) return;
   renderClock();
   const s = state; if(isFinished(s) || !s.clock.turnStart || !connected || !amParticipant(s)) return;
@@ -1011,6 +1060,228 @@ $("resignYes").addEventListener("click", ()=>{
   save(s);
 });
 
+/* ============ TEGEN DE BOT ============ */
+/*BOT-START*/
+function botSearch(fen, level){
+  var VAL={p:100,n:320,b:330,r:500,q:900,k:0};
+  var PST={
+    p:[0,0,0,0,0,0,0,0,50,50,50,50,50,50,50,50,10,10,20,30,30,20,10,10,5,5,10,25,25,10,5,5,0,0,0,20,20,0,0,0,5,-5,-10,0,0,-10,-5,5,5,10,10,-20,-20,10,10,5,0,0,0,0,0,0,0,0],
+    n:[-50,-40,-30,-30,-30,-30,-40,-50,-40,-20,0,0,0,0,-20,-40,-30,0,10,15,15,10,0,-30,-30,5,15,20,20,15,5,-30,-30,0,15,20,20,15,0,-30,-30,5,10,15,15,10,5,-30,-40,-20,0,5,5,0,-20,-40,-50,-40,-30,-30,-30,-30,-40,-50],
+    b:[-20,-10,-10,-10,-10,-10,-10,-20,-10,0,0,0,0,0,0,-10,-10,0,5,10,10,5,0,-10,-10,5,5,10,10,5,5,-10,-10,0,10,10,10,10,0,-10,-10,10,10,10,10,10,10,-10,-10,5,0,0,0,0,5,-10,-20,-10,-10,-10,-10,-10,-10,-20],
+    r:[0,0,0,0,0,0,0,0,5,10,10,10,10,10,10,5,-5,0,0,0,0,0,0,-5,-5,0,0,0,0,0,0,-5,-5,0,0,0,0,0,0,-5,-5,0,0,0,0,0,0,-5,-5,0,0,0,0,0,0,-5,0,0,0,5,5,0,0,0],
+    q:[-20,-10,-10,-5,-5,-10,-10,-20,-10,0,0,0,0,0,0,-10,-10,0,5,5,5,5,0,-10,-5,0,5,5,5,5,0,-5,0,0,5,5,5,5,0,-5,-10,5,5,5,5,5,0,-10,-10,0,5,0,0,0,0,-10,-20,-10,-10,-5,-5,-10,-10,-20],
+    k:[-30,-40,-40,-50,-50,-40,-40,-30,-30,-40,-40,-50,-50,-40,-40,-30,-30,-40,-40,-50,-50,-40,-40,-30,-30,-40,-40,-50,-50,-40,-40,-30,-20,-30,-30,-40,-40,-30,-30,-20,-10,-20,-20,-20,-20,-20,-20,-10,20,20,0,0,0,0,20,20,20,30,10,0,0,10,30,20]
+  };
+  var g = new Chess(fen);
+  var nodes = 0, stop = false, deadline = Date.now() + (level===3 ? 2500 : 1200);
+  function evalBoard(){
+    var b = g.board(), s = 0;
+    for(var r=0;r<8;r++) for(var c=0;c<8;c++){ var p=b[r][c]; if(!p) continue;
+      var idx = p.color==="w" ? r*8+c : (7-r)*8+c; var v = VAL[p.type] + PST[p.type][idx];
+      s += p.color==="w" ? v : -v; }
+    return s;
+  }
+  function mscore(m){ var s=0; if(m.captured) s += 1000 + 10*VAL[m.captured] - VAL[m.piece]; if(m.promotion) s += 800; return s; }
+  function order(ms){ ms.sort(function(a,b){ return mscore(b)-mscore(a); }); return ms; }
+  function quies(alpha, beta, color, d){
+    var stand = color*evalBoard();
+    if(d>=3) return stand;
+    if(stand>=beta) return beta;
+    if(stand>alpha) alpha = stand;
+    var ms = order(g.moves({verbose:true}).filter(function(m){ return m.captured || m.promotion; }));
+    for(var i=0;i<ms.length;i++){
+      g.move(ms[i]); var v = -quies(-beta, -alpha, -color, d+1); g.undo();
+      if(v>=beta) return beta; if(v>alpha) alpha = v;
+    }
+    return alpha;
+  }
+  function search(depth, alpha, beta, color){
+    if((++nodes & 255)===0 && Date.now()>deadline) stop = true;
+    if(stop) return 0;
+    var ms = g.moves({verbose:true});
+    if(!ms.length) return g.in_check() ? -(100000+depth) : 0;
+    if(g.insufficient_material()) return 0;
+    if(depth===0) return quies(alpha, beta, color, 0);
+    order(ms);
+    var best = -Infinity;
+    for(var i=0;i<ms.length;i++){
+      g.move(ms[i]); var v = -search(depth-1, -beta, -alpha, -color); g.undo();
+      if(stop) return 0;
+      if(v>best) best = v; if(v>alpha) alpha = v; if(alpha>=beta) break;
+    }
+    return best;
+  }
+  var color = g.turn()==="w" ? 1 : -1;
+  var root = order(g.moves({verbose:true}));
+  if(!root.length) return null;
+  var pick;
+  if(level===1){
+    if(Math.random()<0.2) pick = root[Math.floor(Math.random()*root.length)];
+    else {
+      var bestV = -Infinity;
+      for(var i=0;i<root.length;i++){ g.move(root[i]); var v = -quies(-Infinity, Infinity, -color, 2) + (Math.random()*120-60); g.undo(); if(v>bestV){ bestV=v; pick=root[i]; } }
+    }
+  } else {
+    var maxDepth = level===2 ? 2 : 4; pick = root[0];
+    for(var d=1; d<=maxDepth; d++){
+      var alpha = -Infinity, cur = null, curV = -Infinity;
+      for(var j=0;j<root.length;j++){
+        g.move(root[j]); var v2 = -search(d-1, -Infinity, -alpha, -color); g.undo();
+        if(stop) break;
+        if(v2>curV){ curV=v2; cur=root[j]; } if(v2>alpha) alpha = v2;
+      }
+      if(stop || !cur) break;
+      pick = cur; root.splice(root.indexOf(cur),1); root.unshift(cur);
+      if(curV>90000) break;
+    }
+  }
+  return {from:pick.from, to:pick.to, promotion:pick.promotion || undefined, nodes:nodes};
+}
+/*BOT-END*/
+let botWorker = null, botBusy = false;
+try{
+  const src = "importScripts('https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js');\n" + botSearch.toString() +
+    "\nonmessage=function(e){ var r=null; try{ r=botSearch(e.data.fen,e.data.level); }catch(err){} postMessage({id:e.data.id, move:r}); };";
+  if(MODE==="bot") botWorker = new Worker(URL.createObjectURL(new Blob([src], {type:"text/javascript"})));
+}catch(e){ botWorker = null; }
+let botReqId = 0;
+function askBot(fen, level){
+  return new Promise(res=>{
+    const id = ++botReqId;
+    let done = false;
+    const fallback = ()=>{ if(done) return; done = true; setTimeout(()=>res(botSearch(fen, level)), 30); };
+    if(!botWorker) return fallback();
+    const t = setTimeout(()=>{ botWorker.terminate(); botWorker=null; fallback(); }, 9000);
+    botWorker.onmessage = e=>{ if(e.data.id!==id || done) return; done = true; clearTimeout(t); if(e.data.move) res(e.data.move); else { done=false; fallback(); } };
+    botWorker.onerror = ()=>{ clearTimeout(t); botWorker = null; fallback(); };
+    botWorker.postMessage({id, fen, level});
+  });
+}
+let bot = null; try{ bot = JSON.parse(store.get("ts-bot")||"null"); }catch(e){}
+function botSave(){ store.set("ts-bot", bot ? JSON.stringify(bot) : null); }
+function botOver(b){ return !!b && (!!b.result || new Chess(b.fen).game_over()); }
+function botOutcome(b){ // vanuit de speler gezien: w/d/l
+  if(b.result) return b.result;
+  const g = new Chess(b.fen);
+  if(g.in_checkmate()) return g.turn()===b.human ? "l" : "w";
+  return "d";
+}
+function botPoints(o, level){ return o==="w" ? level : (o==="d" && level>1) ? 1 : 0; }
+function botFinish(){
+  if(!bot || bot.scored) return;
+  bot.scored = true; botSave();
+  if(!session || !bot.moves.length) return;
+  const o = botOutcome(bot);
+  applyScores([{user:session.user, name:session.name, o, pts:botPoints(o, bot.level), best: o==="w" ? bot.level : 0}], "bot", bot.gid);
+}
+function botAbandon(){
+  if(bot && !botOver(bot) && bot.moves.some(m=>m.by==="me")){ bot.result = "l"; botFinish(); }
+  bot = null; botSave(); selected = null; render();
+}
+async function botMaybeMove(){
+  if(!bot || botOver(bot) || botBusy) return;
+  const g = new Chess(bot.fen); if(g.turn()===bot.human) return;
+  botBusy = true; render();
+  const started = Date.now(); const gidAtStart = bot.gid;
+  const mv = await askBot(bot.fen, bot.level);
+  const wait = 450 - (Date.now()-started); if(wait>0) await new Promise(r=>setTimeout(r, wait));
+  botBusy = false;
+  if(!bot || bot.gid!==gidAtStart || !mv){ render(); return; }
+  const g2 = new Chess(bot.fen); const res = g2.move({from:mv.from, to:mv.to, promotion:mv.promotion||"q"});
+  if(res){ bot.fen = g2.fen(); bot.moves.push({san:res.san, by:"bot"}); bot.last = {from:res.from, to:res.to}; }
+  botSave();
+  if(botOver(bot)) botFinish();
+  render();
+}
+function botStartGame(){
+  const lvl = +$("botLevel").value || 2; let col = $("botColor").value;
+  if(col==="r") col = Math.random()<.5 ? "w" : "b";
+  bot = {gid:rid(), fen:new Chess().fen(), moves:[], human:col, level:lvl, last:null, result:null, scored:false};
+  selected = null; botSave(); render(); botMaybeMove();
+}
+$("botStart").addEventListener("click", botStartGame);
+$("botResign").addEventListener("click", ()=>{ $("botResign").hidden=true; $("botResignYes").hidden=false; $("botResignNo").hidden=false; });
+$("botResignNo").addEventListener("click", ()=>{ $("botResign").hidden=false; $("botResignYes").hidden=true; $("botResignNo").hidden=true; });
+$("botResignYes").addEventListener("click", ()=>{
+  $("botResign").hidden=false; $("botResignYes").hidden=true; $("botResignNo").hidden=true;
+  if(!bot || botOver(bot)) return; bot.result = "l"; botFinish(); render();
+});
+function onSquareBot(sq){
+  if(!bot || botOver(bot) || botBusy) return;
+  const g = new Chess(bot.fen); if(g.turn()!==bot.human) return;
+  const piece = g.get(sq);
+  if(selected && g.moves({square:selected, verbose:true}).some(m=>m.to===sq)){
+    const res = g.move({from:selected, to:sq, promotion:"q"}); selected = null;
+    bot.fen = g.fen(); bot.moves.push({san:res.san, by:"me"}); bot.last = {from:res.from, to:res.to};
+    botSave();
+    if(botOver(bot)) botFinish();
+    render(); botMaybeMove(); return;
+  }
+  selected = (piece && piece.color===bot.human && sq!==selected) ? sq : null;
+  render();
+}
+function renderBot(){
+  const active = !!bot;
+  const over = botOver(bot);
+  $("botSetup").hidden = active && !over;
+  $("botPlaying").hidden = !active || over;
+  $("botNote").textContent = session ? "Je punten tellen mee in de ranglijst onder Bot." : "Speel gerust zonder account. Log in om punten te verdienen.";
+  $("botStart").textContent = over ? "Nieuw potje" : "Start potje";
+  const g = new Chess(bot ? bot.fen : undefined);
+  const human = bot ? bot.human : "w";
+  if(bot){ $("botWho").textContent = "Bot · "+LEVELNAME[bot.level]+" · jij speelt "+NAMES[human]; }
+  $("botThink").hidden = !botBusy;
+  // status
+  let main, sub;
+  if(!bot){ main = "Tegen de computer"; sub = "Kies een niveau en een kleur en druk op Start potje."; $("statusDot").className="dot w"; }
+  else if(over){
+    const o = botOutcome(bot);
+    main = o==="w" ? "Jij wint van de bot!" : o==="l" ? (bot.result ? "Je hebt opgegeven." : "Schaakmat. De bot wint.") : "Remise.";
+    const pts = botPoints(o, bot.level);
+    sub = session && bot.moves.length ? (pts ? "+"+pts+" punt"+(pts>1?"en":"")+" in de ranglijst." : "Geen punten dit keer.") : "Kies hieronder een nieuw potje.";
+    $("statusDot").className = "dot "+(o==="w" ? human : o==="l" ? (human==="w"?"b":"w") : human);
+  } else if(g.turn()===human){ main = "Jij bent aan zet"+(g.in_check()?" — schaak!":""); sub = "Tik op een stuk en daarna op het veld. Rokeren: koning twee velden opzij."; $("statusDot").className="dot "+human; }
+  else { main = "De bot denkt na…"; sub = "Niveau "+LEVELNAME[bot.level]+"."; $("statusDot").className="dot "+(human==="w"?"b":"w"); }
+  $("statusMain").textContent = main; $("statusSub").textContent = sub;
+  $("status").classList.toggle("me", !!bot && !over && g.turn()===human);
+  // bord
+  const flip = human==="b"; const files = "abcdefgh";
+  const myMove = !!bot && !over && !botBusy && g.turn()===human;
+  const targets = {}; if(selected && myMove) g.moves({square:selected, verbose:true}).forEach(m=>targets[m.to]=m);
+  let kingSq = null;
+  if(g.in_check()){ for(const f of files) for(let rk=1;rk<=8;rk++){ const p=g.get(f+rk); if(p && p.type==="k" && p.color===g.turn()) kingSq=f+rk; } }
+  const board = $("board"); board.innerHTML = "";
+  for(let r=0;r<8;r++) for(let c=0;c<8;c++){
+    const rank = flip ? r+1 : 8-r, file = flip ? files[7-c] : files[c], sq = file+rank;
+    const piece = g.get(sq);
+    const el = document.createElement("button"); el.type="button"; el.className="sq"+(((c+r)%2)?" d":"");
+    el.setAttribute("aria-label", sq+(piece?" "+(piece.color==="w"?"wit ":"zwart ")+piece.type:""));
+    if(bot && bot.last && (bot.last.from===sq || bot.last.to===sq)) el.classList.add("last");
+    if(selected===sq) el.classList.add("sel");
+    if(kingSq===sq) el.classList.add("chk");
+    if(targets[sq]){ el.classList.add("tgt","can"); if(piece) el.classList.add("cap"); }
+    if(myMove && piece && piece.color===human) el.classList.add("can");
+    if(piece){ const p=document.createElement("span"); p.className="pc "+piece.color; p.textContent=GLYPH[piece.type]; el.appendChild(p); }
+    if(c===0){ const k=document.createElement("span"); k.className="coord r"; k.textContent=rank; el.appendChild(k); }
+    if(r===7){ const k=document.createElement("span"); k.className="coord f"; k.textContent=file; el.appendChild(k); }
+    el.addEventListener("click", ()=>onSquareBot(sq));
+    board.appendChild(el);
+  }
+  // zetten
+  const mv=$("moves"); mv.innerHTML="";
+  const list = bot ? bot.moves : [];
+  $("moveCount").textContent = list.length+(list.length===1?" zet":" zetten");
+  $("reset").hidden = !bot || over || !$("resetYes").hidden; $("kick").hidden = true;
+  $("reset").textContent = "Stoppen";
+  if(!list.length){ const e=document.createElement("span"); e.style.cssText="grid-column:1/-1;color:var(--muted);font-family:var(--f-body)"; e.textContent= bot ? "Nog geen zetten. Wit begint." : "Nog geen potje gestart."; mv.appendChild(e); }
+  for(let i=0;i<list.length;i+=2){
+    const n=document.createElement("span"); n.className="n"; n.textContent=(i/2+1)+"."; mv.appendChild(n);
+    for(const m of [list[i], list[i+1]]){ const sp=document.createElement("span"); if(m){ sp.textContent=m.san+" "; const sm=document.createElement("small"); sm.textContent = m.by==="bot" ? "bot" : ""; sp.appendChild(sm); } mv.appendChild(sp); }
+  }
+  mv.scrollTop = mv.scrollHeight;
+}
+if(MODE==="bot"){ rankMode = "bot"; if(bot && botOver(bot) && !bot.scored) botFinish(); setTimeout(botMaybeMove, 300); }
+
 /* ============ KNOPPEN, VERBINDING ============ */
 $("join-w").addEventListener("click",()=>joinTeam("w"));
 $("join-b").addEventListener("click",()=>joinTeam("b"));
@@ -1020,12 +1291,14 @@ let resetMode = null;
 function showConfirm(mode){
   resetMode = mode;
   $("reset").hidden = !!mode; $("kick").hidden = !!mode; $("resetYes").hidden = !mode; $("resetNo").hidden = !mode;
-  $("resetYes").textContent = mode==="seats" ? (MODE==="team" ? "Ja, teams leegmaken" : "Ja, plekken leegmaken") : "Ja, bord resetten";
+  if(MODE==="bot"){ $("kick").hidden = true; if(!mode) $("reset").hidden = !bot; }
+  $("resetYes").textContent = MODE==="bot" ? (bot && bot.moves.some(m=>m.by==="me") && !botOver(bot) ? "Ja, stoppen (telt als verlies)" : "Ja, stoppen") : mode==="seats" ? (MODE==="team" ? "Ja, teams leegmaken" : "Ja, plekken leegmaken") : "Ja, bord resetten";
 }
 $("reset").addEventListener("click",()=>showConfirm("board"));
 $("kick").addEventListener("click",()=>showConfirm("seats"));
 $("resetNo").addEventListener("click",()=>showConfirm(null));
 $("resetYes").addEventListener("click",()=>{
+  if(MODE==="bot"){ showConfirm(null); botAbandon(); return; }
   const s = cur();
   let n;
   if(TEAMLIKE){ n = freshTeam(); if(resetMode==="board") n.teams = clone(s.teams); clearMine(); }
@@ -1051,7 +1324,7 @@ function connect(i){
   const failover = setTimeout(()=>{ if(!connected){ cl.end(true); connect(i+1); } }, 9000);
   cl.on("connect", ()=>{
     clearTimeout(failover);
-    const topics = [TOPIC, SCORE+"+"]; if(MODE==="team") topics.push(SUGG+"+");
+    const topics = TOPIC ? [TOPIC, SCORE+"+"] : [SCORE+"+"]; if(MODE==="team") topics.push(SUGG+"+");
     cl.subscribe(topics, {qos:1}, ()=>{ connected = true; setConn(true, "Verbonden"); render(); });
   });
   cl.on("message", (topic, payload)=>{
